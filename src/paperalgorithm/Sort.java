@@ -1,10 +1,12 @@
+package paperalgorithm;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 
-package paperalgorithm;
+
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,7 +14,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jgrapht.graph.DefaultEdge;
+//import org.jgrapht.graph.DefaultEdge;
 
 /**
  *
@@ -303,25 +305,6 @@ public class Sort {
         return sorted;
     }
 
-      
-      public List<Map.Entry<DefaultEdge, Double>> sortOnValueDefaultEdge(HashMap<DefaultEdge, Double> orders) {
-        List<Map.Entry<DefaultEdge, Double>> sorted = new ArrayList<Map.Entry<DefaultEdge, Double>>(orders.entrySet());
-        Collections.sort(sorted, new Comparator<Map.Entry<DefaultEdge, Double>>() {
-            public int compare(Map.Entry<DefaultEdge, Double> o1, Map.Entry<DefaultEdge, Double> o2) {
-                return (int) (o2.getValue() - o1.getValue());
-            }
-        });
-        return sorted;
-    }
-        public List<Map.Entry<String, Double>> sortOnValueString(HashMap<String, Double> orders) {
-        List<Map.Entry<String, Double>> sorted = new ArrayList<Map.Entry<String, Double>>(orders.entrySet());
-        Collections.sort(sorted, new Comparator<Map.Entry<String, Double>>() {
-            public int compare(Map.Entry<String, Double> o1, Map.Entry<String, Double> o2) {
-                return (int) (o2.getValue() - o1.getValue());
-            }
-        });
-        return sorted;
-    } 
   //ascending order    
   public List<Map.Entry<Pair, Integer>> sortOnKey(HashMap<Pair, Integer> orders) {
         List<Map.Entry<Pair, Integer>> sorted = new ArrayList<Map.Entry<Pair, Integer>>(orders.entrySet());

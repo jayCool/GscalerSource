@@ -1,10 +1,10 @@
+package paperalgorithm;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package paperalgorithm;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -38,17 +38,21 @@ public class Scaling extends PrintFunction {
      * @param args the command line arguments
      */
     int untouched = 0;
-
+    long starttime = 0;
+    String outputDir;
     public HashMap<Integer, Integer> scale(HashMap<Integer, Integer> orders) throws FileNotFoundException {
-        HashMap<Integer, Integer> scaleDegree = saticScale(orders);
-        EdgeAdjust smoothing = new EdgeAdjust();
+    HashMap<Integer, Integer> scaleDegree = saticScale(orders);
+        EdgeAdjust smoothing = new EdgeAdjust(System.currentTimeMillis());
+       // this.starttime = System.currentTimeMillis();
+        //smoothing.stattime = this.starttime;
         smoothing.breakIn = breakIn;
         smoothing.stime = this.s;
         smoothing.untouched = this.untouched;
-        
+        smoothing.outputDir = this.outputDir;
         HashMap<Integer, Integer> smoothDegree = smoothing.smoothDstat_DBScale(scaleDegree, scaledEdgeSize, this.scaledNodeSize);
+        
         return smoothDegree;
-      //  }
+        //  }
         //   return downsizeDegree;
     }
 
@@ -104,7 +108,11 @@ public class Scaling extends PrintFunction {
         untouched = 0;
         System.out.println("untouched:" + untouched);
         for (int key : x) {
-            value.add(results.get(key));
+            if (!results.containsKey(key)) {
+                value.add(0);
+            } else {
+                value.add(results.get(key));
+            }
         }
         if (x.size() == 1) {
             for (int i = 0; i < x.get(x.size() - 1); i++) {
@@ -148,6 +156,12 @@ public class Scaling extends PrintFunction {
             vtex = this.sumVector(value);
             diffs = scaledNodeSize - vtex;
         }
+          results.clear();
+        for (int i=0;i<x.size();i++){
+          
+            results.put(x.get(i), value.get(i));
+        }
+        
         System.out.println(diffs);
         //====Node Adjustment done================================//
         return results;
@@ -156,6 +170,7 @@ public class Scaling extends PrintFunction {
     private int sumVector(ArrayList<Integer> x) {
         int sum = 0;
         for (int y : x) {
+            
             sum += y;
         }
         return sum;

@@ -1,24 +1,29 @@
+package paperalgorithm;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package paperalgorithm;
+
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -36,46 +41,36 @@ public class Gscaler {
 
     double s = 1.0 / 15.0;
     public double se = 0.3;
-    public String originfile = "slashdot0811.txt";
-    public String outputDir = "D:\\Research\\GSCALER-WORK\\GSCALER_ANO\\clean_test\\";
+    public String originfile = "C://Users//Anwesha Mal//Documents//slashdot.txt";
+    public String outputDir = "C://Users//Anwesha Mal//Documents";
     int scaledVertexSize = 0;
     int scaledNodeSize = 75879 * 2;
     int scaledEdgeSize = 508837 * 2;
     double ratioOfFixedP = 0.0003;
     int disp = 0;
+    
+public Gscaler(){}
 
-    public static void main(String[] args) throws FileNotFoundException {
-        String[] aa = args;
-
-        ArrayList<Double> ratio = new ArrayList<Double>();
-        ArrayList<Integer> disp = new ArrayList<Integer>();
-
-        double[] sratio = {2};
-        ratio.add(0.009);
-        disp.add(0);
-        for (double r : ratio) {
-            for (double ss : sratio) {
-                for (int i = 0; i < 1; i++) {
-                    for (Integer dis : disp) {
-                        Gscaler pa = new Gscaler();
-                        pa.s = ss;
-                        pa.se = r;
-                        pa.disp = dis;
-                        pa.run(aa);
-                    }
-                }
-            }
-        }
-    }
-
-    private void run(String[] args) throws FileNotFoundException {
-        File theDir = new File(outputDir);
+    public void run(String[] args) throws FileNotFoundException, IOException {
+        System.out.println("Execution starts here ");
         if (args.length > 1) {
-            this.originfile = args[1];
-            this.outputDir = args[2];
-            this.s = Double.parseDouble(args[3]);
-            this.se = Double.parseDouble(args[4]);
+            this.originfile = args[0];
+            this.outputDir = args[1];
+           this.scaledNodeSize = Integer.parseInt(args[2]);
+           this.scaledEdgeSize = Integer.parseInt(args[3]);
+           System.out.println(this.scaledEdgeSize + ":edgeSize  "+this.scaledNodeSize);
+           System.out.println(outputDir);
+           System.out.println(originfile);
         }
+        
+        File theDir = new File(outputDir);
+         
+        File file = new File(outputDir+"out1.txt"); //Your file
+        FileOutputStream fos = new FileOutputStream(file);
+        PrintStream ps = new PrintStream(fos);
+        System.setOut(ps);
+        
+        
         try {
             extractInformation(originfile);
         } catch (IOException ex) {
@@ -83,7 +78,7 @@ public class Gscaler {
         }
         
         System.out.println("start");
-        this.outputDir = this.outputDir + "gsa" + this.se + '_';
+//        this.outputDir = this.outputDir + "gsa" + this.se + '_';
         HashMap<ArrayList<Integer>, Integer> scaleIndegreeMap = new HashMap<ArrayList<Integer>, Integer>();
         HashMap<ArrayList<Integer>, Integer> scaleOutdegreeMap = new HashMap<ArrayList<Integer>, Integer>();
         long start = System.currentTimeMillis();
@@ -119,9 +114,12 @@ public class Gscaler {
    
         EdgeLink edgelink = new EdgeLink();
         edgelink.run(degreeVertex, scaledCorr);
+        
+      
 
         //      cg.
-        Evaluation eva = new Evaluation();
+        
+        /*Evaluation eva = new Evaluation();
         eva.scale = this.s;
         eva.dir = this.s + this.outputDir;
         eva.edgeExpected = this.scaledEdgeSize;
@@ -134,8 +132,18 @@ public class Gscaler {
         System.out.println(edgelink.totalMathching.size());
         System.out.print(this.scaledEdgeSize);
         eva.run2(edgelink.totalMathching);
-
+*/
         //*/
+        
+        finalCheck(edgelink);
+        
+        PrintWriter pw = new PrintWriter(outputDir+"scaled.txt");
+        for (ArrayList<Integer> pair : edgelink.totalMathching){
+            pw.println(pair.get(1) + " " + pair.get(0));
+        }
+        pw.close();
+        PrintWriter epw = new PrintWriter(outputDir + "/" + "exception.txt");
+        epw.close();
     }
 
     void printRunningTime(long runTime) {
@@ -150,6 +158,7 @@ public class Gscaler {
 
     private void scalInOutDegree(HashMap<ArrayList<Integer>, Integer> scaleIndegreeMap, HashMap<ArrayList<Integer>, Integer> scaleOutdegreeMap) throws FileNotFoundException {
         Scaling indegScale = new Scaling();
+        indegScale.outputDir = this.outputDir;
         indegScale.s = s;
         indegScale.se = se;
         indegScale.scaledNodeSize = this.scaledNodeSize;
@@ -158,7 +167,9 @@ public class Gscaler {
         result1 = indegScale.scale(this.uidDegree);
         
         Scaling outdegScale = new Scaling();
+        
         outdegScale.s = s;
+        outdegScale.outputDir = this.outputDir;
         outdegScale.se = se;
         outdegScale.scaledNodeSize = scaledNodeSize;
         outdegScale.scaledEdgeSize = scaledEdgeSize;
@@ -240,12 +251,16 @@ public class Gscaler {
         String line = bi.readLine();
         int nodesize = 77360; 
         int edgesize = 0;
+        int maxIndegree=0, maxOutdegree=0;
+        int minMaxDegree = 0;
+        
         while (line != null) {
             edgesize++;
-            String[] temp = line.split("\\s+");
+            String[] temp = line.split("[^a-zA-Z0-9']+");
             int fid = Integer.parseInt(temp[0]);
             int uid = Integer.parseInt(temp[1]);
-            if (fid != uid) {
+           // System.out.println(fid+" "+uid);
+          //  if (fid != uid) {
                 if (uidCounts.containsKey(uid)) {
                     uidCounts.put(uid, uidCounts.get(uid) + 1);
                 } else {
@@ -263,10 +278,22 @@ public class Gscaler {
                 if (!fidCounts.containsKey(uid)) {
                     fidCounts.put(uid, 0);
                 }
-            }
+                maxIndegree = Math.max(maxIndegree, uidCounts.get(uid));
+                maxOutdegree = Math.max(maxOutdegree, fidCounts.get(fid));
+                
+          //  }
             line = bi.readLine();
         }
+        
+        minMaxDegree = Math.min(maxIndegree, maxOutdegree);
+        if (minMaxDegree < 1.0*this.scaledEdgeSize/this.scaledNodeSize){
+            PrintWriter pw = new PrintWriter(new File(this.outputDir+"/"+"exception.txt"));
+            pw.println("Scaled Average Degree Is Greater Than The Original Maximum Degree");
+            pw.close();
+            System.exit(-1);
+        }
         bi.close();
+        nodesize=fidCounts.size();
         
         HashMap<ArrayList<Integer>, Integer> keyDegree = new HashMap<>();
 
@@ -316,9 +343,10 @@ public class Gscaler {
         input = new FileInputStream(originfile);
         BufferedReader bb = new BufferedReader(new InputStreamReader(input));
         //   scanner1.nextLine();
+        
         line = bb.readLine();
         while (line!=null) {
-            String temp[] = line.split("\\s+");
+            String temp[] = line.split("[^a-zA-Z0-9']+");
             int u = Integer.parseInt(temp[1]);
             int f = Integer.parseInt(temp[0]);
             if (u != f) {
@@ -335,11 +363,42 @@ public class Gscaler {
             }
              line = bb.readLine();
         }
-            this.scaledEdgeSize = (int) (edgesize * this.s * (1 + this.se));
-            this.scaledNodeSize = (int) (nodesize * this.s);
-            System.out.println(this.scaledEdgeSize + "    " + this.scaledNodeSize);
+           
+           
+            this.s = 1.0*this.scaledNodeSize/nodesize;
+            this.se = 1.0 * this.scaledEdgeSize/edgesize/this.s-1;
+          //  this.scaledEdgeSize = (int) (edgesize * this.s * (1 + this.se));
+          //  this.scaledNodeSize = (int) (nodesize * this.s);
+            System.out.println(this.scaledEdgeSize);
+            System.out.println(this.scaledNodeSize);
     }
     
     HashMap<ArrayList<ArrayList<Integer>>, Integer> keyDegreePair = new HashMap<>();
+
+    private void finalCheck(EdgeLink edgelink) {
+        HashSet<Integer> nodes = new HashSet<>();
+        
+        for (ArrayList<Integer> edge: edgelink.totalMathching){
+            nodes.add(edge.get(0));
+            nodes.add(edge.get(1));    
+        }
+        
+        ArrayList<Integer> shuffle  = new ArrayList<>();
+        for (int k : nodes){
+            shuffle.add(k);
+        }
+        
+        while (edgelink.totalMathching.size() < this.scaledEdgeSize){
+            Collections.shuffle(shuffle);
+            int from  = shuffle.get(0);
+            int to = shuffle.get(1);
+            ArrayList<Integer> nPair = new ArrayList<>();
+            nPair.add(to);
+            nPair.add(from);
+            if (!edgelink.totalMathching.contains(nPair)) {
+                edgelink.totalMathching.add(nPair);
+            }
+        }
+    }
 
 }

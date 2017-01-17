@@ -1,8 +1,10 @@
+package paperalgorithm;
+
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package paperalgorithm;
+
 
 import java.io.File;
 import java.io.FileInputStream;
