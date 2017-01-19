@@ -47,21 +47,38 @@ public class NodeSynthesis extends PrintFunction {
 
         int sum_node = sum_nodes(scaleIndegreeMap);
         HashMap<ArrayList<ArrayList<Integer>>, Integer> result = new HashMap<>();
-
+        
+          clearZero(scaleIndegreeMap);
+                clearZero(scaleOutdegreeMap);
+                 System.err.println("scaleIndegreeMap: " + scaleIndegreeMap);
+                System.err.println("scaleoutdegreeMap: " + scaleOutdegreeMap);
+           
+        
         synthesizing(correlated, scaleOutdegreeMap, scaleIndegreeMap, result);
 
         loop++;
         int num = checkBalance(scaleOutdegreeMap, scaleIndegreeMap);
+          clearZero(scaleIndegreeMap);
+                clearZero(scaleOutdegreeMap);
+                 System.err.println("scaleIndegreeMap: " + scaleIndegreeMap);
+                System.err.println("scaleoutdegreeMap: " + scaleOutdegreeMap);
+               
+        
         while (num != preV && !scaleOutdegreeMap.keySet().isEmpty() && !scaleIndegreeMap.keySet().isEmpty()) {
             preV = num;
             synthesizing(correlated, scaleOutdegreeMap, scaleIndegreeMap, result);
             num = checkBalance(scaleOutdegreeMap, scaleIndegreeMap);
         }
-
+        
         if (!scaleOutdegreeMap.keySet().isEmpty() || !scaleIndegreeMap.keySet().isEmpty()) {
+            System.err.println("non empty!");
             while (!scaleIndegreeMap.keySet().isEmpty()) {
+                
                 clearZero(scaleIndegreeMap);
                 clearZero(scaleOutdegreeMap);
+                 System.err.println("scaleIndegreeMap: " + scaleIndegreeMap);
+                System.err.println("scaleoutdegreeMap: " + scaleOutdegreeMap);
+               
 
                 HashMap<ArrayList<ArrayList<Integer>>, Integer> add_result = new HashMap<>();
 
@@ -72,7 +89,7 @@ public class NodeSynthesis extends PrintFunction {
                     if (entry.getValue() == 0) {
                         continue;
                     }
-                    if (Math.random() < 1.0 * entry.getValue() / sum_node) {
+                    if (Math.random() < 1.0 * entry.getValue() / sum_node *10) {
                         loop_for_elements(scaleIndegreeMap, scaleOutdegreeMap, entry, add_result, result);
                     }
                 }
@@ -144,7 +161,7 @@ public class NodeSynthesis extends PrintFunction {
     private HashMap<ArrayList<ArrayList<Integer>>, Integer> synthesizing(
             HashMap<ArrayList<ArrayList<Integer>>, Integer> original, HashMap<ArrayList<Integer>, Integer> scaleOutdegreeMap,
             HashMap<ArrayList<Integer>, Integer> scaleIndegreeMap, HashMap<ArrayList<ArrayList<Integer>>, Integer> result) {
-        System.out.println("Node Synthesizing");
+      //  System.out.println("Node Synthesizing");
         int value = 0;
         Sort so = new Sort();
         List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sorted = so.sortOnKeySum(original);
@@ -201,7 +218,7 @@ public class NodeSynthesis extends PrintFunction {
                 scaleIndegreeMap.remove(calInDegree);
             }
         }
-        System.out.println("End");
+        //System.out.println("End");
         return null;
     }
 
@@ -252,6 +269,9 @@ public class NodeSynthesis extends PrintFunction {
 
     private void loop_for_elements(HashMap<ArrayList<Integer>, Integer> scaleIndegreeMap, HashMap<ArrayList<Integer>, Integer> scaleOutdegreeMap, Entry<ArrayList<ArrayList<Integer>>, Integer> entry, HashMap<ArrayList<ArrayList<Integer>>, Integer> add_result, HashMap<ArrayList<ArrayList<Integer>>, Integer> result) {
         boolean found = false;
+        ArrayList<Integer> oldInDegree = new ArrayList<>();
+        ArrayList<Integer> oldOutDegree = new ArrayList<>();
+        
         for (ArrayList<Integer> inDegree : scaleIndegreeMap.keySet()) {
             for (ArrayList<Integer> outDegree : scaleOutdegreeMap.keySet()) {
                 if (entry.getKey().get(0).equals(inDegree) || entry.getKey().get(1).equals(outDegree)) {
@@ -274,6 +294,8 @@ public class NodeSynthesis extends PrintFunction {
                 }
                 add_result.put(newPair2, 1 + add_result.get(newPair2));
                 result.put(entry.getKey(), entry.getValue() - 1);
+                oldInDegree = inDegree;
+                oldOutDegree = outDegree;
                 found = true;
                 break;
             }
@@ -282,6 +304,11 @@ public class NodeSynthesis extends PrintFunction {
             }
         }
         if (found) {
+            int v = scaleIndegreeMap.get(oldInDegree);
+            scaleIndegreeMap.put(oldInDegree, v-1);
+            v = scaleOutdegreeMap.get(oldOutDegree);
+            scaleOutdegreeMap.put(oldOutDegree, v-1);
+            System.err.println("here");
             clearZero(scaleIndegreeMap);
             clearZero(scaleOutdegreeMap);
         }

@@ -48,19 +48,13 @@ public class EdgeLink {
     ArrayList<Integer> rightUnsettled = new ArrayList<>();
     public HashMap<ArrayList<ArrayList<Integer>>, ArrayList<ArrayList<Integer>>> mappingDegree2IDs = new HashMap<>(); //the key is the degree of the mapping, and the key is the ids that have that id;
 
-    public void run(HashMap<ArrayList<Integer>, Integer> degreeMap, HashMap<ArrayList<ArrayList<Integer>>, Integer> pairMap) throws FileNotFoundException {
+    public void run(HashMap<ArrayList<Integer>, Integer> degreeMap, HashMap<ArrayList<ArrayList<Integer>>, Integer> nodePairMap) throws FileNotFoundException {
         HashMap<ArrayList<Integer>, ArrayList<Integer>> degreeIDs = new HashMap<>();
         HashMap<Integer, ArrayList<Integer>> idDegree = new HashMap<>();
 
-        System.out.println("assign ID start");
         settleIDRelated(degreeMap, degreeIDs, idDegree);
-        System.out.println("assign ID done");
-
-        settleAlmostRegular(pairMap, degreeIDs);
-        System.out.println("=============total: " + totalSize);
-        System.out.println("=============oSize:" + osize);
-        System.out.println("=============curSize:" + totalMathching.size());
-
+        settleAlmostRegular(nodePairMap, degreeIDs);
+    
     }
 
     private void settleIDRelated(HashMap<ArrayList<Integer>, Integer> degreeMap, HashMap<ArrayList<Integer>, ArrayList<Integer>> degreeIDs, HashMap<Integer, ArrayList<Integer>> idDegree) {
@@ -77,26 +71,7 @@ public class EdgeLink {
         }
     }
 
-    public List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sortOnValue(HashMap<ArrayList<ArrayList<Integer>>, Integer> orders) {
-        List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sorted = new ArrayList<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>>(orders.entrySet());
-        Collections.sort(sorted, new Comparator<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>>() {
-            public int compare(Map.Entry<ArrayList<ArrayList<Integer>>, Integer> o1, Map.Entry<ArrayList<ArrayList<Integer>>, Integer> o2) {
-                return (o1.getValue() - o2.getValue());
-            }
-        });
-        return sorted;
-    }
-
-    public List<Map.Entry<Integer, Integer>> sortOnValueI(HashMap<Integer, Integer> orders) {
-        List<Map.Entry<Integer, Integer>> sorted = new ArrayList<Map.Entry<Integer, Integer>>(orders.entrySet());
-        Collections.sort(sorted, new Comparator<Map.Entry<Integer, Integer>>() {
-            public int compare(Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) {
-                return (o2.getValue() - o1.getValue());
-            }
-        });
-        return sorted;
-    }
-
+    
     //this will produce the detailed mapping to ids
     private void settleAlmostRegular(HashMap<ArrayList<ArrayList<Integer>>, Integer> pairMap, HashMap<ArrayList<Integer>, ArrayList<Integer>> degreeIDs) {
         HashMap<ArrayList<Integer>, Queue<Integer>> leftQueue = new HashMap<>();

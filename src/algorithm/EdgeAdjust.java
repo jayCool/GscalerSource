@@ -60,7 +60,7 @@ class EdgeAdjust extends Sort {
 
         degree_dis_preparation(scaleDegree, x, value);
 
-        System.out.println("before: " + sumVector(value));
+       // System.out.println("before: " + sumVector(value));
 
         int diff = -product(x, value) + dependAfter;
         int ender = value.size() - 1;

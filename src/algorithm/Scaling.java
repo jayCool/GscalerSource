@@ -96,10 +96,11 @@ public class Scaling extends PrintFunction {
 
     private void extending_x_value(ArrayList<Integer> x, ArrayList<Integer> value) {
         for (int i = 0; i < x.get(x.size() - 1); i++) {
+            if (!x.contains(i)){
             x.add(i, i);
-            value.add(i, 0);
+            value.add(i, 0);}
         }
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < Math.min(5,5); i++) {
             x.add(x.size());
             value.add(0);
         }
@@ -150,6 +151,9 @@ public class Scaling extends PrintFunction {
             diffs = scaledNodeSize - vtex_number;
         }
         results.clear();
+        System.err.println("x: " + x);
+        System.err.println("value: " + value);
+        
         for (int i = 0; i < x.size(); i++) {
             results.put(x.get(i), value.get(i));
         }

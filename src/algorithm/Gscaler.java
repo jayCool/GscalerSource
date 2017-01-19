@@ -34,10 +34,10 @@ import org.kohsuke.args4j.Option;
 public class Gscaler {
 
     @Option(name = "-i", usage = "input of the graph file", metaVar = "INPUT")
-    private String originfile = "";
+    private String originfile = "C:\\Users\\workshop\\Desktop\\edgelist.txt";
 
     @Option(name = "-o", usage = "ouput of the file", metaVar = "OUTPUT")
-    private String outputDir = "";
+    private String outputDir = "C:\\Users\\workshop\\Desktop\\OUTPUT.TXT";
 
     @Option(name = "-d", usage = "Delimilter of the fields", metaVar = "MODE")
     private String delim = "\\s+";
@@ -46,10 +46,10 @@ public class Gscaler {
     private String ignoreFirst = "0";
 
     @Option(name = "-sN", usage = "scaled node size", metaVar = "Thread")
-    private int scaledNodeSize = 0;
+    private int scaledNodeSize = 20;
 
     @Option(name = "-sE", usage = "scaled edge size", metaVar = "Thread")
-    private int scaledEdgeSize = 0;
+    private int scaledEdgeSize = 38;
 
     double s = 1.0 / 15.0;
     public double se = 0.3;
@@ -67,54 +67,53 @@ public class Gscaler {
             System.exit(-1);
         }
         gscaler.run();
-
     }
 
     public void run() throws FileNotFoundException, IOException {
-
+        
+        System.err.println("extract information");
         extractInformation(originfile);
-     
         HashMap<ArrayList<Integer>, Integer> scaleIndegree_dis = new HashMap<ArrayList<Integer>, Integer>();
         HashMap<ArrayList<Integer>, Integer> scaleOutdegree_dis = new HashMap<ArrayList<Integer>, Integer>();
+        
+        System.err.println("scale degrees");
         scalInOutDegree(scaleIndegree_dis, scaleOutdegree_dis);
         
+        System.err.println("synthesis nodes");
         NodeSynthesis nodeSyn = new NodeSynthesis();
         initCorrVetex(nodeSyn);
-
         HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledJointDegree_Dis = 
                 nodeSyn.produceCorrel(scaleOutdegree_dis, scaleIndegree_dis, jointDegree_dis);
         
         
-        //=====================Conversion============================//
+        System.err.println("format conversion");
         HashMap<ArrayList<Integer>, Integer> calCorrVertexSource = new HashMap<>();
         HashMap<ArrayList<Integer>, Integer> calCorrVertexTarget = new HashMap<>();
         HashMap<ArrayList<Integer>, Integer> degreeVertex = new HashMap<>();
-        
         convertFormat(calCorrVertexTarget, calCorrVertexSource, degreeVertex, scaledJointDegree_Dis);
         
-       // System.out.println(sumV + "SIZE");
+        System.err.println("Edge correlation");
         CorrelationFunctionScaling correlationFunctionScaling = new CorrelationFunctionScaling();
         HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorr = new HashMap<>();
         HashMap<ArrayList<Integer>, Integer> fuzzyTarget = convertFuzzy(calCorrVertexTarget, 0);
         HashMap<ArrayList<Integer>, Integer> fuzzySource = convertFuzzy(calCorrVertexSource, 1);
-
         settleInitialCP(correlationFunctionScaling, degreeVertex);
-
         scaledCorr = correlationFunctionScaling.run(this.correlation_function, fuzzyTarget, fuzzySource);
         
+        System.err.println("Edge generation");
         EdgeLink edgelink = new EdgeLink();
         edgelink.run(degreeVertex, scaledCorr);
-
-        finalCheck(edgelink);
-
+        
+        if (edgelink.totalMathching.size() < this.scaledEdgeSize){
+            System.err.println("missing: " + (scaledEdgeSize - edgelink.totalMathching.size()));
+            finalCheck(edgelink);
+        }
         PrintWriter pw = new PrintWriter(outputDir + "scaled.txt");
         for (ArrayList<Integer> pair : edgelink.totalMathching) {
             pw.println(pair.get(1) + " " + pair.get(0));
         }
         pw.close();
-        PrintWriter epw = new PrintWriter(outputDir + "/" + "exception.txt");
-        epw.close();
-    }
+      }
 
     void printRunningTime(long runTime) {
         try {
@@ -161,7 +160,7 @@ public class Gscaler {
 
     private void initCorrVetex(NodeSynthesis nodeSyn) {
         nodeSyn.scaledVertexSize = this.scaledNodeSize;
-        System.out.println(this.scaledNodeSize + "\tvertexSize");
+       // System.out.println(this.scaledNodeSize + "\tvertexSize");
         nodeSyn.stime = s;
         nodeSyn.rationP = this.ratioOfFixedP;
     }
