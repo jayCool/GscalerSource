@@ -5,47 +5,28 @@ package algorithm;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
-import java.util.Scanner;
-import java.util.Vector;
 
 /**
  *
  * @author workshop
  */
-public class Scaling extends PrintFunction {
+public class Scaling {
 
-    public int scaledNodeSize = 60704;
-    public int secondPoint = 0;
-    private double randomProb = 0.5;
-    public double oneRatio = 1;
-    public int domaingap = 0;
-    public int breakIn = 0;
-    public double s = 0.8;
-    static int scaledEdgeSize = 411958;
-    double se;
-
-    /**
-     * @param args the command line arguments
-     */
-    int untouched = 0;
-    long starttime = 0;
+    public int scaledNodeSize = 0;
+    public double s_n = 0;
+    public int scaledEdgeSize = 0;
+    double s_e;
     String outputDir;
 
     public HashMap<Integer, Integer> scale(HashMap<Integer, Integer> orders) throws FileNotFoundException {
         HashMap<Integer, Integer> scaleDegree = saticScale(orders);
         EdgeAdjust smoothing = new EdgeAdjust(System.currentTimeMillis());
-        smoothing.breakIn = breakIn;
-        smoothing.stime = this.s;
+        smoothing.s_n = this.s_n;
         smoothing.outputDir = this.outputDir;
         HashMap<Integer, Integer> smoothDegree = smoothing.smoothDstat_DBScale(scaleDegree, scaledEdgeSize, this.scaledNodeSize);
 
@@ -62,19 +43,19 @@ public class Scaling extends PrintFunction {
             total += entry.getValue();
             x.add(entry.getKey());
 
-            if (entry.getValue() * this.s < 1) {
-                if (1.0 * entry.getValue() * this.s > Math.random()) {
+            if (entry.getValue() * this.s_n < 1) {
+                if (1.0 * entry.getValue() * this.s_n > Math.random()) {
                     used++;
                     results.put(entry.getKey(), 1);
                 }
             } else {
-                double gap = entry.getValue() * this.s - (int) (entry.getValue() * this.s);
+                double gap = entry.getValue() * this.s_n - (int) (entry.getValue() * this.s_n);
                 if (gap > Math.random()) {
-                    used += (int) (entry.getValue() * this.s) + 1;
-                    results.put(entry.getKey(), (int) (entry.getValue() * this.s) + 1);
+                    used += (int) (entry.getValue() * this.s_n) + 1;
+                    results.put(entry.getKey(), (int) (entry.getValue() * this.s_n) + 1);
                 } else {
-                    results.put(entry.getKey(), (int) (entry.getValue() * this.s));
-                    used += (int) (entry.getValue() * this.s);
+                    results.put(entry.getKey(), (int) (entry.getValue() * this.s_n));
+                    used += (int) (entry.getValue() * this.s_n);
                 }
             }
         }
@@ -107,9 +88,9 @@ public class Scaling extends PrintFunction {
     }
 
     private void node_adjustment(ArrayList<Integer> x, HashMap<Integer, Integer> results, int used, int total) {
-        if (this.s < 1) {
-            double interval = (1.0 * (x.size() - 2) / (total * this.s - used));
-            for (int i = 0; i < total * this.s - used; i++) {
+        if (this.s_n < 1) {
+            double interval = (1.0 * (x.size() - 2) / (total * this.s_n - used));
+            for (int i = 0; i < total * this.s_n - used; i++) {
                 int temp = x.get((int) (i * interval));
                 if (results.containsKey(temp)) {
                     results.put(temp, results.get(temp) + 1);

@@ -11,19 +11,12 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Vector;
 
-/**
- *
- * @author workshop
- */
 class EdgeAdjust extends Sort {
 
     int breakIn = 0;
-    int sourceAfter = 41500;
-    double stime = 0.1;
+    int sourceAfter = 0;
+    double s_n = 0;
     long starttime = 0;
     String outputDir;
 

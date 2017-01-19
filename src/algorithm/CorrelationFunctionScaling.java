@@ -19,13 +19,13 @@ import java.util.Set;
 
 public class CorrelationFunctionScaling {
 
-    public double stime = 0.2;
+    public double s_n = 0.2;
     HashMap<ArrayList<Integer>, Integer> scaleJoinDegree_Dis = new HashMap<>();
     HashMap<ArrayList<ArrayList<Integer>>, Integer> result = new HashMap<>();
     HashMap<Integer, ArrayList<ArrayList<Integer>>> sourecDisMap = new HashMap<>();
     HashMap<Integer, ArrayList<ArrayList<Integer>>> targetDisMap = new HashMap<>();
-    HashMap<ArrayList<ArrayList<Integer>>, Integer> original_joint_degree_dis;
-    double se = 0.0;
+    HashMap<ArrayList<Integer>, Integer> original_joint_degree_dis;
+    double s_e = 0.0;
     int level = 0;
     boolean finalFlag = false;
 
@@ -114,7 +114,8 @@ public class CorrelationFunctionScaling {
 
             ArrayList<Integer> targetDegree = entry.getKey().get(0);
             ArrayList<Integer> sourceDegree = entry.getKey().get(1);
-
+           // System.err.println("i: " + i);
+            //System.err.println("out: " + sorted_correlation);
             updateValue(calSource, calTarget, sourceDegree, targetDegree, traversalOrders, value);
         }
 
@@ -467,23 +468,13 @@ public class CorrelationFunctionScaling {
 
     private void sort_correlation(HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedOriginal) {
         Sort so = new Sort();
-        HashMap<ArrayList<Integer>, Integer> original = new HashMap<>();
-        for (Entry<ArrayList<ArrayList<Integer>>, Integer> entry : this.original_joint_degree_dis.entrySet()) {
-            ArrayList<Integer> arr = new ArrayList<>();
-            for (ArrayList<Integer> a : entry.getKey()) {
-                for (int b : a) {
-                    arr.add(b);
-                }
-            }
-            original.put(arr, entry.getValue());
-        }
-
-        sorted_correlation = so.sortOnAppearance(correlatedOriginal, original);
+       // System.err.println("correlated original: " + correlatedOriginal);
+        sorted_correlation = so.sortOnAppearance(correlatedOriginal, original_joint_degree_dis);
     }
 
     private int cal_value(Entry<ArrayList<ArrayList<Integer>>, Integer> entry) {
-        int value = (int) (entry.getValue() * stime * (1 + Math.max(0, se)));
-        double difff = entry.getValue() * stime * (1 + Math.max(0, se)) - value;
+        int value = (int) (entry.getValue() * s_n * (1 + Math.max(0, s_e)));
+        double difff = entry.getValue() * s_n * (1 + Math.max(0, s_e)) - value;
 
         double kl = Math.random();
         if (kl < difff) {
