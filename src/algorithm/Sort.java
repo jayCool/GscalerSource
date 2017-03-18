@@ -50,7 +50,7 @@ public class Sort {
         return sorted;
     }
       
-    public List<Map.Entry<ArrayList<Integer>, Integer>> sortOnKeySumS(HashMap<ArrayList<Integer>, Integer> orders) {
+    public List<Map.Entry<ArrayList<Integer>, Integer>> sortOnKeySumDescending(HashMap<ArrayList<Integer>, Integer> orders) {
         List<Map.Entry<ArrayList<Integer>, Integer>> sorted = new ArrayList<Map.Entry<ArrayList<Integer>, Integer>>(orders.entrySet());
         Collections.sort(sorted, new Comparator<Map.Entry<ArrayList<Integer>, Integer>>(){
             public int compare(Map.Entry<ArrayList<Integer>, Integer> o1, Map.Entry<ArrayList<Integer>, Integer> o2) {
@@ -68,5 +68,26 @@ public class Sort {
         });
         return sorted;
     }
+    
+      List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sortOnAppearance(HashMap<ArrayList<ArrayList<Integer>>, Integer> orders,  final HashMap<ArrayList<Integer>, Integer> target) {
+    List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sorted = new ArrayList<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>>(orders.entrySet());
+        Collections.sort(sorted, new Comparator<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>>() {
+            public int compare(Map.Entry<ArrayList<ArrayList<Integer>>, Integer> o1, Map.Entry<ArrayList<ArrayList<Integer>>, Integer> o2) {
+                ArrayList<ArrayList<Integer>> arr1 = new ArrayList<>();
+                ArrayList<ArrayList<Integer>> arr2= new ArrayList<>();
+                arr1=o1.getKey();
+                arr2=o2.getKey();
+                int sum1=0;
+                int sum2=0;
+                for (ArrayList<Integer> psum:arr1){
+                sum1+=target.get(psum);
+                }
+                 for (ArrayList<Integer> psum:arr2){
+                sum2+=target.get(psum);
+                }
+                return -(sum2 - sum1);
+            }
+        });
+        return sorted;  }
   
 }

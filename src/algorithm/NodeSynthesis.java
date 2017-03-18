@@ -17,84 +17,71 @@ import java.util.Set;
  * @author jiangwei
  *
  */
-public class NodeSynthesis extends PrintFunction {
+public class NodeSynthesis{
 
     public double s_n = 0;
-    public int scaledVertexSize = 0;
     int loop = 1;
-
+    
     
     //The approach of the correlation is based on the original degree distribution.
     // 1. sort the degree in descending order. And settle the value from largest to the smallest
     // 2. Find the closest if the value is not found
-    public NodeSynthesis() {
+    public NodeSynthesis(double s_n) {
+        this.s_n = s_n;
     }
 
     
     //allocate those ids with enough credits, those leftovers deal with later.
     public HashMap<ArrayList<Integer>, Integer> produceCorrel(HashMap<Integer, Integer> scaleOutdegreeMap,
-            HashMap<Integer, Integer> scaleIndegreeMap, HashMap<ArrayList<Integer>, Integer> correlated) {
-        int preV = 0;
+            HashMap<Integer, Integer> scaleIndegreeMap, HashMap<ArrayList<Integer>, Integer> jointDegreeMap) {
 
-        int sum_node = sum_nodes(scaleIndegreeMap);
-        HashMap<ArrayList<Integer>, Integer> result = new HashMap<>();
-
+        int preV = -1, num = 0;
+        int scaledNodeSize = sum_nodes(scaleIndegreeMap);
         clearZero(scaleIndegreeMap);
         clearZero(scaleOutdegreeMap);
-        System.err.println("scaleIndegreeMap: " + scaleIndegreeMap);
-        System.err.println("scaleoutdegreeMap: " + scaleOutdegreeMap);
-
-        synthesizing(correlated, scaleOutdegreeMap, scaleIndegreeMap, result);
-
-        loop++;
-        int num = checkBalance(scaleOutdegreeMap, scaleIndegreeMap);
-        clearZero(scaleIndegreeMap);
-        clearZero(scaleOutdegreeMap);
-        System.err.println("scaleIndegreeMap: " + scaleIndegreeMap);
-        System.err.println("scaleoutdegreeMap: " + scaleOutdegreeMap);
-
-        while (num != preV && !scaleOutdegreeMap.keySet().isEmpty() && !scaleIndegreeMap.keySet().isEmpty()) {
+        
+        HashMap<ArrayList<Integer>, Integer> scaledJointDegreeMap = new HashMap<>();
+         while (num != preV && !scaleOutdegreeMap.keySet().isEmpty() && !scaleIndegreeMap.keySet().isEmpty()) {
             preV = num;
-            synthesizing(correlated, scaleOutdegreeMap, scaleIndegreeMap, result);
+            synthesizing(jointDegreeMap, scaleOutdegreeMap, scaleIndegreeMap, scaledJointDegreeMap);
             num = checkBalance(scaleOutdegreeMap, scaleIndegreeMap);
-            System.err.println("prev: " + preV);
-            System.err.println("num: " + num);
+            clearZero(scaleIndegreeMap);
+            clearZero(scaleOutdegreeMap);
+        
         }
 
         if (!scaleOutdegreeMap.keySet().isEmpty() || !scaleIndegreeMap.keySet().isEmpty()) {
-            System.err.println("non empty!");
             while (!scaleIndegreeMap.keySet().isEmpty()) {
 
                 clearZero(scaleIndegreeMap);
                 clearZero(scaleOutdegreeMap);
-                System.err.println("scaleIndegreeMap: " + scaleIndegreeMap);
-                System.err.println("scaleoutdegreeMap: " + scaleOutdegreeMap);
-
+                
+                
                 HashMap<ArrayList<Integer>, Integer> add_result = new HashMap<>();
 
-                for (Entry<ArrayList<Integer>, Integer> entry : result.entrySet()) {
+                for (Entry<ArrayList<Integer>, Integer> entry : scaledJointDegreeMap.entrySet()) {
                     if (scaleIndegreeMap.keySet().isEmpty()) {
                         break;
                     }
                     if (entry.getValue() == 0) {
                         continue;
                     }
-                    if (Math.random() < 1.0 * entry.getValue() / sum_node * 10) {
-                        loop_for_elements(scaleIndegreeMap, scaleOutdegreeMap, entry, add_result, result);
+                    if (Math.random() < 1.0 * entry.getValue() / scaledNodeSize * 10) {
+                        loop_for_elements(scaleIndegreeMap, scaleOutdegreeMap, entry, add_result, scaledJointDegreeMap);
                     }
                 }
 
                 for (Entry<ArrayList<Integer>, Integer> entry : add_result.entrySet()) {
-                    if (result.containsKey(entry.getKey())) {
-                        result.put(entry.getKey(), entry.getValue() + result.get(entry.getKey()));
+                    if (scaledJointDegreeMap.containsKey(entry.getKey())) {
+                        scaledJointDegreeMap.put(entry.getKey(), entry.getValue() + scaledJointDegreeMap.get(entry.getKey()));
                     } else {
-                        result.put(entry.getKey(), entry.getValue());
+                        scaledJointDegreeMap.put(entry.getKey(), entry.getValue());
                     }
                 }
             }
         }
 
-        return result;
+        return scaledJointDegreeMap;
     }
 
     private int manhattanClosest(int degree, Set<Integer> degreeSet) {
@@ -118,30 +105,26 @@ public class NodeSynthesis extends PrintFunction {
     }
 
     private HashMap<ArrayList<Integer>, Integer> synthesizing(
-            HashMap<ArrayList<Integer>, Integer> original, HashMap<Integer, Integer> scaleOutdegreeMap,
-            HashMap<Integer, Integer> scaleIndegreeMap, HashMap<ArrayList<Integer>, Integer> result) {
-        //  System.out.println("Node Synthesizing");
+            HashMap<ArrayList<Integer>, Integer> originalJointDegreeDis, HashMap<Integer, Integer> scaleOutdegreeMap,
+            HashMap<Integer, Integer> scaleIndegreeMap, HashMap<ArrayList<Integer>, Integer> scaledJointDegreeMap) {
+     
         int value = 0;
+        
         Sort so = new Sort();
-        List<Map.Entry<ArrayList<Integer>, Integer>> sorted = so.sortOnKeySumS(original);
+        List<Map.Entry<ArrayList<Integer>, Integer>> sorted = so.sortOnKeySumDescending(originalJointDegreeDis);
 
         for (int i = 0; i < sorted.size() && !scaleOutdegreeMap.keySet().isEmpty()
                 && !scaleIndegreeMap.keySet().isEmpty() && sorted.size() > 0; i++) {
 
-            Entry<ArrayList<Integer>, Integer> entry = sorted.get(i);
-            int outDegree = entry.getKey().get(1);
-            int inDegree = entry.getKey().get(0);
+            Entry<ArrayList<Integer>, Integer> jointDegreeEntry =   sorted.get(i);
+            
+            int outDegree = jointDegreeEntry.getKey().get(1);
+            int inDegree = jointDegreeEntry.getKey().get(0);
 
-            value = cal_value(entry);
+            value = cal_value(jointDegreeEntry);
 
-            if (value == 0) {
+            if (value == 0 || (loop == 1 && (!scaleOutdegreeMap.containsKey(outDegree) || !scaleIndegreeMap.containsKey(inDegree)))) {
                 continue;
-            }
-
-            if (loop == 1) {
-                if (!scaleOutdegreeMap.containsKey(outDegree) || !scaleIndegreeMap.containsKey(inDegree)) {
-                    continue;
-                }
             }
 
             int calOutDegree = outDegree;
@@ -160,16 +143,18 @@ public class NodeSynthesis extends PrintFunction {
             ArrayList<Integer> calJointDegree = new ArrayList<>(2);
             calJointDegree.add(calInDegree);
             calJointDegree.add(calOutDegree);
+            
+            
             value = Math.min(value, scaleOutdegreeMap.get(calOutDegree));
             value = Math.min(value, scaleIndegreeMap.get(calInDegree));
 
             scaleOutdegreeMap.put(calOutDegree, scaleOutdegreeMap.get(calOutDegree) - value);
             scaleIndegreeMap.put(calInDegree, scaleIndegreeMap.get(calInDegree) - value);
 
-            if (!result.containsKey(calJointDegree)) {
-                result.put(calJointDegree, 0);
+            if (!scaledJointDegreeMap.containsKey(calJointDegree)) {
+                scaledJointDegreeMap.put(calJointDegree, 0);
             }
-            result.put(calJointDegree, value + result.get(calJointDegree));
+            scaledJointDegreeMap.put(calJointDegree, value + scaledJointDegreeMap.get(calJointDegree));
             if (scaleOutdegreeMap.get(calOutDegree) == 0) {
                 scaleOutdegreeMap.remove(calOutDegree);
             }
@@ -177,7 +162,6 @@ public class NodeSynthesis extends PrintFunction {
                 scaleIndegreeMap.remove(calInDegree);
             }
         }
-        //System.out.println("End");
         return null;
     }
 
@@ -227,13 +211,15 @@ public class NodeSynthesis extends PrintFunction {
     private void loop_for_elements(HashMap<Integer, Integer> scaleIndegreeMap,
             HashMap<Integer, Integer> scaleOutdegreeMap, 
             Entry<ArrayList<Integer>, Integer> entry, HashMap<ArrayList<Integer>, Integer> add_result, 
-            HashMap<ArrayList<Integer>, Integer> result) {
+            HashMap<ArrayList<Integer>, Integer> scaledJointDegreeMap) {
+       
         boolean found = false;
         int oldInDegree = 0;
         int oldOutDegree = 0;
 
         for (int inDegree : scaleIndegreeMap.keySet()) {
             for (int outDegree : scaleOutdegreeMap.keySet()) {
+                
                 if (entry.getKey().get(0).equals(inDegree) || entry.getKey().get(1).equals(outDegree)) {
                     continue;
                 }
@@ -253,7 +239,7 @@ public class NodeSynthesis extends PrintFunction {
                     add_result.put(newPair2, 0);
                 }
                 add_result.put(newPair2, 1 + add_result.get(newPair2));
-                result.put(entry.getKey(), entry.getValue() - 1);
+                scaledJointDegreeMap.put(entry.getKey(), entry.getValue() - 1);
                 oldInDegree = inDegree;
                 oldOutDegree = outDegree;
                 found = true;

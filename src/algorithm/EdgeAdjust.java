@@ -14,32 +14,28 @@ import java.util.HashMap;
 
 class EdgeAdjust extends Sort {
 
-    int breakIn = 0;
-    int sourceAfter = 0;
-    double s_n = 0;
     long starttime = 0;
-    String outputDir;
-
+   
     EdgeAdjust(long currentTimeMillis) {
         this.starttime = currentTimeMillis;
     }
 
-    private HashMap<Integer, ArrayList<Integer>> maximumRange(ArrayList<Integer> x, ArrayList<Integer> value) {
+    private HashMap<Integer, ArrayList<Integer>> maximumRange(ArrayList<Integer> degreeList, ArrayList<Integer> value) {
         HashMap<Integer, ArrayList<Integer>> result = new HashMap<>();
-        for (int i = 0; i < x.size(); i++) {
+        for (int i = 0; i < degreeList.size(); i++) {
             if (value.get(i) > 0) {
-                for (int j = i + 1; j < x.size(); j++) {
+                for (int j = i + 1; j < degreeList.size(); j++) {
                     ArrayList<Integer> arr = new ArrayList<>();
                     arr.add(i);
                     arr.add(j);
-                    result.put(x.get(j) - x.get(i), arr);
+                    result.put(degreeList.get(j) - degreeList.get(i), arr);
                 }
 
-                for (int j = 0; j < x.size(); j++) {
+                for (int j = 0; j < degreeList.size(); j++) {
                     ArrayList<Integer> arr = new ArrayList<>();
                     arr.add(i);
                     arr.add(j);
-                    result.put(x.get(j) - x.get(i), arr);
+                    result.put(degreeList.get(j) - degreeList.get(i), arr);
 
                 }
             }
@@ -47,30 +43,24 @@ class EdgeAdjust extends Sort {
         return result;
     }
 
-    HashMap<Integer, Integer> smoothDstat_DBScale(HashMap<Integer, Integer> scaleDegree, int dependAfter, int sourceAfter) throws FileNotFoundException {
-        ArrayList<Integer> x = new ArrayList<Integer>();
+    HashMap<Integer, Integer> smoothDstat_DBScale(HashMap<Integer, Integer> scaleDegree, int scaledEdgeSize, int scaledNodeSize) throws FileNotFoundException {
+        ArrayList<Integer> degreeList = new ArrayList<Integer>();
         ArrayList<Integer> value = new ArrayList<>();
 
-        degree_dis_preparation(scaleDegree, x, value);
+        closing_degree_gap(scaleDegree, degreeList, value);
 
-       // System.out.println("before: " + sumVector(value));
-
-        int diff = -product(x, value) + dependAfter;
+        int edgeDiff = -product(degreeList, value) + scaledEdgeSize;
+        
         int ender = value.size() - 1;
         int starter = 0;
 
-        HashMap<Integer, ArrayList<Integer>> map = maximumRange(x, value);
+        HashMap<Integer, ArrayList<Integer>> map = maximumRange(degreeList, value);
         boolean maxflag = false;
 
-        while (!map.containsKey(diff) && diff != 0) {
-            if ((System.currentTimeMillis() - this.starttime) / 1000 > 2000) {
-                PrintWriter pw = new PrintWriter(new File(this.outputDir + "/" + "exception.txt"));
-                pw.println("Running Time Too Long(Greater Than 2000 Seconds)");
-                pw.close();
-                System.exit(-1);
-            }
-
-            if (diff < 0) {
+        while (!map.containsKey(edgeDiff) && edgeDiff != 0) {
+            RunningException.checkTooLongRunTime(starttime);
+            
+            if (edgeDiff < 0) {
                 if (value.get(ender) > 0) {
                     value.set(starter, value.get(starter) + 1);
                     value.set(ender, value.get(ender) - 1);
@@ -99,36 +89,26 @@ class EdgeAdjust extends Sort {
                 ender = value.size() - 1;
             }
 
-            diff = dependAfter - product(x, value);
+            edgeDiff = scaledEdgeSize - product(degreeList, value);
 
             if (maxflag) {
-                map = this.maximumRange(x, value);
+                map = this.maximumRange(degreeList, value);
                 maxflag = false;
             }
         }
 
-        if (diff != 0) {
-            ArrayList<Integer> arr = map.get(diff);
+        if (edgeDiff != 0) {
+            ArrayList<Integer> arr = map.get(edgeDiff);
             value.set(arr.get(0), value.get(arr.get(0)) - 1);
             value.set(arr.get(1), value.get(arr.get(1)) + 1);
 
         }
-        //products = product(x, value);
         HashMap<Integer, Integer> res = new HashMap<>();
 
-        for (int i = 0; i < x.size(); i++) {
-            res.put(x.get(i), value.get(i));
+        for (int i = 0; i < degreeList.size(); i++) {
+            res.put(degreeList.get(i), value.get(i));
         }
-        System.out.println("source After:" + sumVector(value));
         return res;
-    }
-
-    private int sumVector(ArrayList<Integer> x) {
-        int sum = 0;
-        for (int y : x) {
-            sum += y;
-        }
-        return sum;
     }
 
     private int product(ArrayList<Integer> x, ArrayList<Integer> value) {
@@ -141,7 +121,7 @@ class EdgeAdjust extends Sort {
         return sum;
     }
 
-    private void degree_dis_preparation(HashMap<Integer, Integer> scaleDegree, ArrayList<Integer> x, ArrayList<Integer> value) {
+    private void closing_degree_gap(HashMap<Integer, Integer> scaleDegree, ArrayList<Integer> x, ArrayList<Integer> value) {
         int maxDegree = Collections.max(scaleDegree.keySet());
         for (int i = 0; i < maxDegree; i++) {
             if (!scaleDegree.containsKey(i)) {
@@ -150,11 +130,6 @@ class EdgeAdjust extends Sort {
             x.add(i);
             value.add(scaleDegree.get(i));
         }
-        //x.addAll(scaleDegree.keySet());
-        //Collections.sort(x);
-        //for (int key : x) {
-        //    value.add(scaleDegree.get(key));
-        //}
     }
 
 }
