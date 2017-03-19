@@ -38,7 +38,6 @@ public class Gscaler {
     public int scaledEdgeSize = 32179;
 
     
-    double s_e = 0;
    
     public Gscaler() {
     }
@@ -76,26 +75,29 @@ public class Gscaler {
         
         
         System.err.println("format conversion");
-        HashMap<ArrayList<Integer>, Integer> targetNodeDis = calNodeSets(scaledJointDegreeDis, 0);
-        HashMap<ArrayList<Integer>, Integer> sourceNodeDis = calNodeSets(scaledJointDegreeDis, 1);
+        HashMap<ArrayList<Integer>, Integer> scaleTargetNodes = calNodeSets(scaledJointDegreeDis, 0);
+        HashMap<ArrayList<Integer>, Integer> scaleSourceNodes = calNodeSets(scaledJointDegreeDis, 1);
         
         System.err.println("Edge correlation");
-        CorrelationFunctionScaling correlationFunctionScaling = new CorrelationFunctionScaling();
-        HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorr = new HashMap<>();
-        settleInitialCP(correlationFunctionScaling, scaledJointDegreeDis);
-        scaledCorr = correlationFunctionScaling.run(correlation_function, targetNodeDis, sourceNodeDis);
+        double s_n = 1.0 * scaledFeature.nodeSize / originalFeature.nodeSize;
+        double s_e = 1.0 * scaledFeature.edgeSize / originalFeature.edgeSize / s_n - 1;
+        
+        CorrelationFunctionScaling correlationFunctionScaling = new CorrelationFunctionScaling(scaledFeature.jointdegreeDis, originalFeature.jointdegreeDis,s_e, s_n);
+        scaledFeature.correlationFunction = correlationFunctionScaling.run(originalFeature.correlationFunction, scaleTargetNodes, scaleSourceNodes);
         
         System.err.println("Edge generation");
         EdgeLink edgelink = new EdgeLink();
-        edgelink.run(scaledJointDegreeDis, scaledCorr);
+        HashSet<ArrayList<Integer>> edgeList = edgelink.run(scaledJointDegreeDis, scaledFeature.correlationFunction);
         
-        if (edgelink.totalMathching.size() < this.scaledEdgeSize){
-            System.err.println("missing: " + (scaledEdgeSize - edgelink.totalMathching.size()));
-            finalCheck(edgelink);
+        if (edgeList.size() < this.scaledEdgeSize){
+            System.err.println("missing: " + (scaledEdgeSize - edgeList.size()));
+            finalCheck(edgeList);
         }
         
+        
+        System.out.println("Output edges");
         PrintWriter pw = new PrintWriter(outputDir);
-        for (ArrayList<Integer> pair : edgelink.totalMathching) {
+        for (ArrayList<Integer> pair : edgeList) {
             pw.println(pair.get(1) + " " + pair.get(0));
         }
         pw.close();
@@ -103,13 +105,7 @@ public class Gscaler {
 
 
 
-   
-    private void settleInitialCP(CorrelationFunctionScaling edgeSynthesis, HashMap<ArrayList<Integer>, Integer> degreeVertex) {
-        edgeSynthesis.scaleJoinDegree_Dis = degreeVertex;
-        edgeSynthesis.original_joint_degree_dis = this.jointdegreeDis;
-        edgeSynthesis.s_e = this.s_e;
-        edgeSynthesis.s_n = this.s_n;
-    }
+ 
 
     
 
@@ -122,10 +118,10 @@ public class Gscaler {
     }
 
    
-    private void finalCheck(EdgeLink edgelink) {
+    private void finalCheck(HashSet<ArrayList<Integer>> edgeList) {
         HashSet<Integer> nodes = new HashSet<>();
 
-        for (ArrayList<Integer> edge : edgelink.totalMathching) {
+        for (ArrayList<Integer> edge : edgeList) {
             nodes.add(edge.get(0));
             nodes.add(edge.get(1));
         }
@@ -135,15 +131,15 @@ public class Gscaler {
             shuffle.add(k);
         }
 
-        while (edgelink.totalMathching.size() < this.scaledEdgeSize) {
+        while (edgeList.size() < this.scaledEdgeSize) {
             Collections.shuffle(shuffle);
             int from = shuffle.get(0);
             int to = shuffle.get(1);
             ArrayList<Integer> nPair = new ArrayList<>();
             nPair.add(to);
             nPair.add(from);
-            if (!edgelink.totalMathching.contains(nPair)) {
-                edgelink.totalMathching.add(nPair);
+            if (!edgeList.contains(nPair)) {
+                edgeList.add(nPair);
             }
         }
     }

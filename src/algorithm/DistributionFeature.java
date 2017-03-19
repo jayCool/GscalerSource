@@ -17,7 +17,7 @@ public class DistributionFeature {
     public HashMap<Integer, Integer> indegreeDis = new HashMap<>();
     public HashMap<Integer, Integer> outdegreeDis = new HashMap<>();
     public HashMap<ArrayList<Integer>, Integer> jointdegreeDis = new HashMap<>();
-    public HashMap<ArrayList<ArrayList<Integer>>, Integer> correlation_function = new HashMap<>();
+    public HashMap<ArrayList<ArrayList<Integer>>, Integer> correlationFunction = new HashMap<>();
     int nodeSize;
     int edgeSize;
 

@@ -147,10 +147,10 @@ public class FeatureExtraction {
                     ArrayList<ArrayList<Integer>> arrs = new ArrayList<>(2);
                     arrs.add(arr1);
                     arrs.add(arr2);
-                    if (!disFeature.correlation_function.containsKey(arrs)) {
-                        disFeature.correlation_function.put(arrs, 1);
+                    if (!disFeature.correlationFunction.containsKey(arrs)) {
+                        disFeature.correlationFunction.put(arrs, 1);
                     } else {
-                        disFeature.correlation_function.put(arrs, 1 + disFeature.correlation_function.get(arrs));
+                        disFeature.correlationFunction.put(arrs, 1 + disFeature.correlationFunction.get(arrs));
                     }
                 }
                 edgesize++;

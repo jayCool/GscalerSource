@@ -22,19 +22,23 @@ import java.util.Queue;
 public class EdgeLink {
 
    
-    public HashSet<ArrayList<Integer>> totalMathching = new HashSet<>();
+    
    
-    public void run(HashMap<ArrayList<Integer>, Integer> degreeMap, HashMap<ArrayList<ArrayList<Integer>>, Integer> nodePairMap) throws FileNotFoundException {
+    public  HashSet<ArrayList<Integer>> run(HashMap<ArrayList<Integer>, Integer> scaledJointDegreeDis, 
+            HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction) throws FileNotFoundException {
         HashMap<ArrayList<Integer>, ArrayList<Integer>> degreeIDs = new HashMap<>();
         HashMap<Integer, ArrayList<Integer>> idDegree = new HashMap<>();
 
-        settleIDRelated(degreeMap, degreeIDs, idDegree);
-        settleAlmostRegular(nodePairMap, degreeIDs);
+        calDegreeIDs(scaledJointDegreeDis, degreeIDs, idDegree);
+        HashSet<ArrayList<Integer>> edgeList = 
+        edgeAssignment(scaledCorrelationFunction, degreeIDs);
+        return edgeList;
     }
 
-    private void settleIDRelated(HashMap<ArrayList<Integer>, Integer> degreeMap, HashMap<ArrayList<Integer>, ArrayList<Integer>> degreeIDs, HashMap<Integer, ArrayList<Integer>> idDegree) {
+    private void calDegreeIDs(HashMap<ArrayList<Integer>, Integer> scaledJointDegreeDis, 
+            HashMap<ArrayList<Integer>, ArrayList<Integer>> degreeIDs, HashMap<Integer, ArrayList<Integer>> idDegree) {
         int id = 0;
-        for (Entry<ArrayList<Integer>, Integer> entry : degreeMap.entrySet()) {
+        for (Entry<ArrayList<Integer>, Integer> entry : scaledJointDegreeDis.entrySet()) {
             ArrayList<Integer> arr = entry.getKey();
             ArrayList<Integer> temp = new ArrayList<>();
             for (int i = 0; i < entry.getValue(); i++) {
@@ -48,13 +52,16 @@ public class EdgeLink {
 
     
     //this will produce the detailed mapping to ids
-    private void settleAlmostRegular(HashMap<ArrayList<ArrayList<Integer>>, Integer> pairMap, HashMap<ArrayList<Integer>, ArrayList<Integer>> degreeIDs) {
+    private HashSet<ArrayList<Integer>> edgeAssignment(HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction, 
+            HashMap<ArrayList<Integer>, ArrayList<Integer>> degreeIDs) {
+         HashSet<ArrayList<Integer>> edgeList = new HashSet<>();
+       
         HashMap<ArrayList<Integer>, Queue<Integer>> leftQueue = new HashMap<>();
         HashMap<ArrayList<Integer>, Queue<Integer>> rightQueue = new HashMap<>();
 
         queueConstruction(leftQueue, rightQueue, degreeIDs);
 
-        for (Entry<ArrayList<ArrayList<Integer>>, Integer> entry : pairMap.entrySet()) {
+        for (Entry<ArrayList<ArrayList<Integer>>, Integer> entry : scaledCorrelationFunction.entrySet()) {
             ArrayList<Integer> leftDegree = entry.getKey().get(0);
             ArrayList<Integer> rightDegree = entry.getKey().get(1);
             int leftid = 0;
@@ -68,7 +75,7 @@ public class EdgeLink {
                 arr.add(rightid);
 
                 //avoid repeat
-                if (leftid == rightid || totalMathching.contains(arr)) {
+                if (leftid == rightid || edgeList.contains(arr)) {
                     leftQueue.get(leftDegree).add(leftid);
                     leftid = leftQueue.get(leftDegree).poll();
                     arr.clear();
@@ -76,12 +83,13 @@ public class EdgeLink {
                     arr.add(rightid);
                 }
 
-                this.totalMathching.add(arr);
+                edgeList.add(arr);
                 value--;
                 leftQueue.get(leftDegree).add(leftid);
                 rightQueue.get(rightDegree).add(rightid);
             }
         }
+        return edgeList;
       
     }
 

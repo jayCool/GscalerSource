@@ -5,6 +5,7 @@
  */
 package algorithm;
 
+import configuration.Constant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ public class NodeAdjustment {
                 value.add(i, 0);
             }
         }
-        for (int i = 0; i < Math.min(5, degreeList.size() / 5); i++) {
+        for (int i = 0; i < Math.min(Constant.CLEANING_THRESHOLD, degreeList.size() / Constant.CLEANING_THRESHOLD); i++) {
             degreeList.add(degreeList.size());
             value.add(0);
         }

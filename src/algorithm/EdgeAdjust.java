@@ -43,7 +43,7 @@ class EdgeAdjust extends Sort {
         return result;
     }
 
-    HashMap<Integer, Integer> smoothDstat_DBScale(HashMap<Integer, Integer> scaleDegree, int scaledEdgeSize, int scaledNodeSize) throws FileNotFoundException {
+    HashMap<Integer, Integer> smoothDegree(HashMap<Integer, Integer> scaleDegree, int scaledEdgeSize, int scaledNodeSize) throws FileNotFoundException {
         ArrayList<Integer> degreeList = new ArrayList<Integer>();
         ArrayList<Integer> value = new ArrayList<>();
 

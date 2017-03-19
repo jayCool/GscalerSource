@@ -13,7 +13,7 @@ public class DegreeScaling {
         nodeAdjustment.adjustment(scaleDegree, scaledNodeSize);
         
         EdgeAdjust edgeAdjust = new EdgeAdjust(System.currentTimeMillis());
-        HashMap<Integer, Integer> smoothDegree = edgeAdjust.smoothDstat_DBScale(scaleDegree, scaledEdgeSize, scaledNodeSize);
+        HashMap<Integer, Integer> smoothDegree = edgeAdjust.smoothDegree(scaleDegree, scaledEdgeSize, scaledNodeSize);
 
         return smoothDegree;
     }
