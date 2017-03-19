@@ -32,10 +32,10 @@ public class Gscaler {
     private String ignoreFirst = "0";
 
     @Option(name = "-sN", usage = "scaled node size", metaVar = "NODE SIZE")
-    public int scaledNodeSize = 4421;
+    public int scaledNodeSize = 0;
 
     @Option(name = "-sE", usage = "scaled edge size", metaVar = "EDGE SIZE")
-    public int scaledEdgeSize = 32179;
+    public int scaledEdgeSize = 0;
 
     
    
