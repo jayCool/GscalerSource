@@ -77,13 +77,7 @@ public class FeatureExtraction {
                 line = reader.readLine();
             }
             this.minMaxDegree = Math.min(maxIndegree, maxOutdegree);
-            /*   if (minMaxDegree < 1.0 * gscaler.scaledEdgeSize / gscaler.scaledNodeSize) {
-                PrintWriter pw = new PrintWriter(new File(gscaler.outputDir + "/" + "exception.txt"));
-                pw.println("Scaled Average Degree Is Greater Than The Original Maximum Degree");
-                pw.close();
-                System.exit(-1);
-            }
-             */
+      
             reader.close();
         } catch (FileNotFoundException ex) {
             Logger.getLogger(CommandParser.class.getName()).log(Level.SEVERE, null, ex);
@@ -160,9 +154,7 @@ public class FeatureExtraction {
             bb.close();
             disFeature.nodeSize = idDegree.size();
             disFeature.edgeSize = edgesize;
-            //    this.s_n = 1.0 * this.scaledNodeSize / nodesize;
-            //    this.s_e = 1.0 * this.scaledEdgeSize / edgesize / this.s_n - 1;
-        } catch (FileNotFoundException ex) {
+           } catch (FileNotFoundException ex) {
             Logger.getLogger(CommandParser.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(CommandParser.class.getName()).log(Level.SEVERE, null, ex);
