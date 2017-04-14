@@ -86,14 +86,14 @@ public class FeatureExtraction {
              */
             reader.close();
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(Gscaler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CommandParser.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
-            Logger.getLogger(Gscaler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CommandParser.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             try {
                 input.close();
             } catch (IOException ex) {
-                Logger.getLogger(Gscaler.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(CommandParser.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -163,9 +163,9 @@ public class FeatureExtraction {
             //    this.s_n = 1.0 * this.scaledNodeSize / nodesize;
             //    this.s_e = 1.0 * this.scaledEdgeSize / edgesize / this.s_n - 1;
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(Gscaler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CommandParser.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
-            Logger.getLogger(Gscaler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CommandParser.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

@@ -1,65 +1,45 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package algorithm;
 
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import static org.kohsuke.args4j.ExampleMode.ALL;
-import org.kohsuke.args4j.Option;
+import java.util.Map;
 
+/**
+ *
+ * @author workshop
+ */
 public class Gscaler {
-
-    @Option(name = "-i", usage = "input of the graph file", metaVar = "INPUT")
-    private String originfile = "";
-
-    @Option(name = "-o", usage = "ouput of the file", metaVar = "OUTPUT")
-    private String outputDir = "";
-
-    @Option(name = "-d", usage = "Delimilter of the fields", metaVar = "DELIMILTER")
-    private String delim = "\\s+";
-
-    @Option(name = "-f", usage = "Ignore the first line", metaVar = "FIRSTLINE")
-    private String ignoreFirst = "0";
-
-    @Option(name = "-sN", usage = "scaled node size", metaVar = "NODE SIZE")
-    public int scaledNodeSize;
-
-    @Option(name = "-sE", usage = "scaled edge size", metaVar = "EDGE SIZE")
-    public int scaledEdgeSize;
-
-    public Gscaler() {
+    int scaledEdgeSize;
+    int scaledNodeSize;
+    String originfile = "";
+    String outputDir = ""; 
+     
+    Gscaler(int scaledEdgeSize, int scaledNodeSize, String outputDir, String originfile) {
+        this.scaledEdgeSize = scaledEdgeSize;
+        this.scaledNodeSize = scaledNodeSize;
+        this.originfile = originfile;
+        this.outputDir = outputDir;
     }
+ public void run() throws FileNotFoundException, IOException {
 
-    public static void main(String[] args) throws IOException {
-        Gscaler gscaler = new Gscaler();
-        if (!gscaler.parseCmdLine(args)) {
-            System.err.println("command wrong");
-            System.exit(-1);
-        } else {
-            gscaler.run();
-        }
-    }
-
-    public void run() throws FileNotFoundException, IOException {
-
-        System.err.println("extract information");
+        System.out.println("extract information");
         FeatureExtraction featureExtraction = new FeatureExtraction();
         DistributionFeature originalFeature = featureExtraction.extractInformation(originfile);
         DistributionFeature scaledFeature = new DistributionFeature();
         scaledFeature.nodeSize = scaledNodeSize;
         scaledFeature.edgeSize = scaledEdgeSize;
 
-        System.err.println("scale degrees");
+        System.out.println("scale degrees");
 
         DegreeScaling indegScale = new DegreeScaling();
         scaledFeature.indegreeDis = indegScale.scale(originalFeature.indegreeDis, scaledFeature.edgeSize, scaledFeature.nodeSize,
@@ -68,28 +48,28 @@ public class Gscaler {
         DegreeScaling outdegScale = new DegreeScaling();
         scaledFeature.outdegreeDis = outdegScale.scale(originalFeature.outdegreeDis, scaledFeature.edgeSize, scaledFeature.nodeSize, 1.0 * scaledFeature.nodeSize / originalFeature.nodeSize);
 
-        System.err.println("synthesis nodes");
+        System.out.println("synthesis nodes");
         NodeSynthesis nodeSyn = new NodeSynthesis(1.0 * scaledFeature.nodeSize / originalFeature.nodeSize);
         scaledFeature.jointdegreeDis
                 = nodeSyn.produceCorrel(scaledFeature.outdegreeDis, scaledFeature.indegreeDis, originalFeature.jointdegreeDis);
 
-        System.err.println("format conversion");
+        System.out.println("format conversion");
         HashMap<ArrayList<Integer>, Integer> scaleTargetNodes = calNodeSets( scaledFeature.jointdegreeDis, 0);
         HashMap<ArrayList<Integer>, Integer> scaleSourceNodes = calNodeSets( scaledFeature.jointdegreeDis, 1);
 
-        System.err.println("Edge correlation");
+        System.out.println("Edge correlation");
         double s_n = 1.0 * scaledFeature.nodeSize / originalFeature.nodeSize;
         double s_e = 1.0 * scaledFeature.edgeSize / originalFeature.edgeSize / s_n - 1;
 
         CorrelationFunctionScaling correlationFunctionScaling = new CorrelationFunctionScaling(scaledFeature.jointdegreeDis, originalFeature.jointdegreeDis, s_e, s_n);
         scaledFeature.correlationFunction = correlationFunctionScaling.run(originalFeature.correlationFunction, scaleTargetNodes, scaleSourceNodes);
 
-        System.err.println("Edge generation");
+        System.out.println("Edge generation");
         EdgeLink edgelink = new EdgeLink();
         HashSet<ArrayList<Integer>> edgeList = edgelink.run(scaledFeature.jointdegreeDis, scaledFeature.correlationFunction);
 
         if (edgeList.size() < this.scaledEdgeSize) {
-            System.err.println("missing: " + (scaledEdgeSize - edgeList.size()));
+            System.out.println("missing: " + (scaledEdgeSize - edgeList.size()));
             finalCheck(edgeList);
         }
 
@@ -103,7 +83,7 @@ public class Gscaler {
 
     private HashMap<ArrayList<Integer>, Integer> calNodeSets(HashMap<ArrayList<Integer>, Integer> scaledJointDegreeDis, int i) {
         HashMap<ArrayList<Integer>, Integer> result = new HashMap<>();
-        for (Entry<ArrayList<Integer>, Integer> entry : scaledJointDegreeDis.entrySet()) {
+        for (Map.Entry<ArrayList<Integer>, Integer> entry : scaledJointDegreeDis.entrySet()) {
             result.put(entry.getKey(), entry.getValue() * entry.getKey().get(i));
         }
         return result;
@@ -133,24 +113,5 @@ public class Gscaler {
                 edgeList.add(nPair);
             }
         }
-    }
-
-    private boolean parseCmdLine(String[] args) {
-        CmdLineParser parser = new CmdLineParser(this);
-
-        try {
-            parser.parseArgument(args);
-            if (this.originfile.isEmpty() || this.outputDir.isEmpty() || this.scaledNodeSize == 0 || this.scaledEdgeSize == 0) {
-                System.out.println("java -jar Gscaler.jar -i inputfile -o outputfile -sE scaledEdgeSize -sN scaledNodeSize [options...] arguments...");
-                System.out.println("  Example: java -jar Gscaler.jar" + parser.printExample(ALL));
-                return false;
-            }
-        } catch (CmdLineException e) {
-            System.out.println("java -jar Gscaler.jar -i inputfile -o outputfile -sE scaledEdgeSize -sN scaledNodeSize [options...] arguments...");
-            System.out.println("  Example: java -jar Gscaler.jar" + parser.printExample(ALL));
-            return false;
-        }
-        return true;
-    }
-
+    }    
 }
