@@ -43,10 +43,7 @@ public class CorrelationFunctionScaling {
         this.s_n = s_n;
     }
 
-    //The approach of the correlation is based on the original degree distribution.
-    // 1. sort the degree in descending order. And settle the value from largest to the smallest
-    // 2. Find the closest if the value is not found
-    HashMap<ArrayList<ArrayList<Integer>>, Integer> run(HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedOriginal,
+     HashMap<ArrayList<ArrayList<Integer>>, Integer> run(HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedOriginal,
             HashMap<ArrayList<Integer>, Integer> scaleTargetNodes, 
             HashMap<ArrayList<Integer>, Integer> scaleSourceNodes) throws FileNotFoundException {
         loop = 0;
@@ -59,7 +56,6 @@ public class CorrelationFunctionScaling {
         return correlatedScale;
     }
 
-    //allocate those ids with enough credits, those leftovers deal with later.
     private void produceCorrel(
             HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes,
             HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedOriginal,
