@@ -19,16 +19,12 @@ public class RunningException {
 
     static void checkTooLongRunTime(long starttime) {
         if ((System.currentTimeMillis() - starttime) / 1000 > 2000) {
-            PrintWriter pw = null;
-            try {
-                pw = new PrintWriter(new File("exception.txt"));
+            try (PrintWriter pw = new PrintWriter(new File("exception.txt"))) {
                 pw.println("Running Time Too Long(Greater Than 2000 Seconds)");
                 pw.close();
                 System.exit(-1);
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(RunningException.class.getName()).log(Level.SEVERE, null, ex);
-            } finally {
-                pw.close();
             }
         }
     }

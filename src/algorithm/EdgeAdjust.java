@@ -5,15 +5,12 @@ package algorithm;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
 class EdgeAdjust extends Sort {
-
     long starttime = 0;
    
     EdgeAdjust(long currentTimeMillis) {
@@ -44,7 +41,7 @@ class EdgeAdjust extends Sort {
     }
 
     HashMap<Integer, Integer> smoothDegree(HashMap<Integer, Integer> scaleDegree, int scaledEdgeSize, int scaledNodeSize) throws FileNotFoundException {
-        ArrayList<Integer> degreeList = new ArrayList<Integer>();
+        ArrayList<Integer> degreeList = new ArrayList<>();
         ArrayList<Integer> value = new ArrayList<>();
 
         closing_degree_gap(scaleDegree, degreeList, value);

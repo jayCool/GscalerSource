@@ -17,7 +17,6 @@ import java.util.Set;
  *
  */
 public class NodeSynthesis {
-
     public double s_n = 0;
     int loop = 1;
 
@@ -187,9 +186,7 @@ public class NodeSynthesis {
         }
         return result;
     }
-
     
-
     private void loop_for_elements(HashMap<Integer, Integer> scaleIndegreeMap,
             HashMap<Integer, Integer> scaleOutdegreeMap,
             Entry<ArrayList<Integer>, Integer> entry, HashMap<ArrayList<Integer>, Integer> add_result,
@@ -201,7 +198,6 @@ public class NodeSynthesis {
 
         for (int inDegree : scaleIndegreeMap.keySet()) {
             for (int outDegree : scaleOutdegreeMap.keySet()) {
-
                 if (entry.getKey().get(0).equals(inDegree) || entry.getKey().get(1).equals(outDegree)) {
                     continue;
                 }

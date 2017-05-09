@@ -5,27 +5,24 @@ package algorithm;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
- /*
- * @author workshop
- */
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
+ /*
+ * @author workshop
+ */
 public class CorrelationFunctionScaling {
-
     private double s_n = 0.2;
     private double s_e = 0.0;
 
     private HashMap<ArrayList<Integer>, Integer> scaleJointDegreeDis = new HashMap<>();
     HashMap<Integer, ArrayList<ArrayList<Integer>>> sourecDisMap = new HashMap<>();
     HashMap<Integer, ArrayList<ArrayList<Integer>>> targetDisMap = new HashMap<>();
-    private HashMap<ArrayList<Integer>, Integer> originalJointDegreeDis;
+    private final HashMap<ArrayList<Integer>, Integer> originalJointDegreeDis;
 
     int level = 0;
     boolean finalFlag = false;
@@ -79,7 +76,7 @@ public class CorrelationFunctionScaling {
 
         finalFlag = true;
         randomMapping(correlatedScale, scaleSourceNodes, scaleTargetNodes);
-        num = cal_min_leftOver(scaleSourceNodes, scaleTargetNodes);
+//        num = cal_min_leftOver(scaleSourceNodes, scaleTargetNodes);   //delete or not?
 
         rewiring(scaleSourceNodes, scaleTargetNodes, correlatedScale);
 
@@ -273,11 +270,10 @@ public class CorrelationFunctionScaling {
         sourceDisMap.clear();
 
         for (Map.Entry<ArrayList<Integer>, Integer> sourceEntry : calSource.entrySet()) {
-            int sum = 0;
             if (sourceEntry.getValue() <= 0) {
                 continue;
             }
-            sum = sourceEntry.getKey().get(0) + sourceEntry.getKey().get(1);
+            int sum = sourceEntry.getKey().get(0) + sourceEntry.getKey().get(1);
             if (!sourceDisMap.containsKey(sum)) {
                 sourceDisMap.put(sum, new ArrayList<ArrayList<Integer>>());
             }
@@ -290,8 +286,8 @@ public class CorrelationFunctionScaling {
             HashMap<Integer, ArrayList<ArrayList<Integer>>> traversalOrders, int value,
             HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedScale) {
 
-        ArrayList<ArrayList<Integer>> sourcePools = new ArrayList<ArrayList<Integer>>();
-        ArrayList<ArrayList<Integer>> targetPools = new ArrayList<ArrayList<Integer>>();
+        ArrayList<ArrayList<Integer>> sourcePools = new ArrayList<>();
+        ArrayList<ArrayList<Integer>> targetPools = new ArrayList<>();
 
         int sourceSum = sourceDegree.get(0) + sourceDegree.get(1);
         int targetSum = targetDegree.get(0) + targetDegree.get(1);
@@ -315,6 +311,7 @@ public class CorrelationFunctionScaling {
             int diff = Math.abs(sample.get(0) - sourceDegree.get(0)) + Math.abs(sample.get(1) - sourceDegree.get(1));
             max = Math.max(diff, max);
 
+            // type does not match. by swike
             if (!ordered.containsKey(sample)) {
                 ordered.put(diff, new ArrayList<ArrayList<Integer>>());
             }
@@ -337,7 +334,7 @@ public class CorrelationFunctionScaling {
                     }
                 }
             }
-            if (targetDisMap.containsKey(i + targetSum)) {
+            /* + else ? */ if (targetDisMap.containsKey(i + targetSum)) {
                 for (ArrayList<Integer> r : targetDisMap.get(i + targetSum)) {
                     if (scaleTargetNodes.containsKey(r)) {
                         targetPools.add(r);
@@ -390,7 +387,6 @@ public class CorrelationFunctionScaling {
                                 CleaningMap.cleanHashMap(scaleSourceNodes, calSourceDegree);
                                 CleaningMap.cleanHashMap(scaleTargetNodes, calTargetDegree);
                                 
-                               
                                 budget = budget - value;
                                 if (budget == 0) {
                                     return;
@@ -404,8 +400,6 @@ public class CorrelationFunctionScaling {
             }
         }
     }
-
-  
 
     private ArrayList<ArrayList<Integer>> paring(ArrayList<Integer> targetDegree ,ArrayList<Integer> sourceDegree) {
         ArrayList<ArrayList<Integer>> pair1 = new ArrayList<>();

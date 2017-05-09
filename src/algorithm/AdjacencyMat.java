@@ -10,8 +10,9 @@ public class AdjacencyMat {
     public static void main(String[] args) throws FileNotFoundException {
         
     }
+    
     public void adjmat(String args[]) throws FileNotFoundException{
-         System.out.println(args.length);
+        System.out.println(args.length);
         String inputFile = args[0];
         String outputFile = args[1];
         Scanner scanner = new Scanner(new File(inputFile));
@@ -28,7 +29,6 @@ public class AdjacencyMat {
         }
         scanner.close();
         pw.close();
-    
     }
     
 }

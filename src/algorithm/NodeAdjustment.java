@@ -9,13 +9,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
-
 public class NodeAdjustment {
 
     private int sumVector(ArrayList<Integer> x) {
         int sum = 0;
         for (int y : x) {
-
             sum += y;
         }
         return sum;
@@ -64,7 +62,6 @@ public class NodeAdjustment {
         int adjustingIndex = 0;
 
         while (diffs != 0) {
-            
             value.set(adjustingIndex, Math.max(0, value.get(adjustingIndex) + Math.abs(diffs) / diffs));
             adjustingIndex = (adjustingIndex + 1) % (value.size()-1);
             vtex_number = sumVector(value);

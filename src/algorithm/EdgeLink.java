@@ -6,7 +6,6 @@ package algorithm;
  * and open the template in the editor.
  */
 
-
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,9 +19,6 @@ import java.util.Queue;
  * @author workshop
  */
 public class EdgeLink {
-
-   
-    
    
     public  HashSet<ArrayList<Integer>> run(HashMap<ArrayList<Integer>, Integer> scaledJointDegreeDis, 
             HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction) throws FileNotFoundException {
@@ -30,8 +26,7 @@ public class EdgeLink {
         HashMap<Integer, ArrayList<Integer>> idDegree = new HashMap<>();
 
         calDegreeIDs(scaledJointDegreeDis, degreeIDs, idDegree);
-        HashSet<ArrayList<Integer>> edgeList = 
-        edgeAssignment(scaledCorrelationFunction, degreeIDs);
+        HashSet<ArrayList<Integer>> edgeList = edgeAssignment(scaledCorrelationFunction, degreeIDs);
         return edgeList;
     }
 
@@ -49,12 +44,11 @@ public class EdgeLink {
             degreeIDs.put(arr, temp);
         }
     }
-
     
     //this will produce the detailed mapping to ids
     private HashSet<ArrayList<Integer>> edgeAssignment(HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction, 
             HashMap<ArrayList<Integer>, ArrayList<Integer>> degreeIDs) {
-         HashSet<ArrayList<Integer>> edgeList = new HashSet<>();
+        HashSet<ArrayList<Integer>> edgeList = new HashSet<>();
        
         HashMap<ArrayList<Integer>, Queue<Integer>> leftQueue = new HashMap<>();
         HashMap<ArrayList<Integer>, Queue<Integer>> rightQueue = new HashMap<>();
@@ -70,7 +64,7 @@ public class EdgeLink {
             while (value > 0) {
                 leftid = leftQueue.get(leftDegree).poll();
                 rightid = rightQueue.get(rightDegree).poll();
-                ArrayList<Integer> arr = new ArrayList<Integer>();
+                ArrayList<Integer> arr = new ArrayList<>();
                 arr.add(leftid);
                 arr.add(rightid);
 
@@ -90,13 +84,12 @@ public class EdgeLink {
             }
         }
         return edgeList;
-      
     }
 
     private void queueConstruction(HashMap<ArrayList<Integer>, Queue<Integer>> leftQueue, HashMap<ArrayList<Integer>, Queue<Integer>> rightQueue, HashMap<ArrayList<Integer>, ArrayList<Integer>> degreeIDs) {
         for (Entry<ArrayList<Integer>, ArrayList<Integer>> entry : degreeIDs.entrySet()) {
-            Queue<Integer> lq = new LinkedList<Integer>();
-            Queue<Integer> rq = new LinkedList<Integer>();
+            Queue<Integer> lq = new LinkedList<>();
+            Queue<Integer> rq = new LinkedList<>();
             for (Integer in : entry.getValue()) {
                 lq.add(in);
                 rq.add(in);

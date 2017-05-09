@@ -30,7 +30,8 @@ public class Gscaler {
         this.originfile = originfile;
         this.outputDir = outputDir;
     }
- public void run() throws FileNotFoundException, IOException {
+
+    public void run() throws FileNotFoundException, IOException {
 
         System.out.println("extract information");
         FeatureExtraction featureExtraction = new FeatureExtraction();
@@ -74,11 +75,12 @@ public class Gscaler {
         }
 
         System.out.println("Output edges");
-        PrintWriter pw = new PrintWriter(outputDir);
-        for (ArrayList<Integer> pair : edgeList) {
-            pw.println(pair.get(1) + " " + pair.get(0));
+        try (PrintWriter pw = new PrintWriter(outputDir)) {
+            for (ArrayList<Integer> pair : edgeList) {
+                pw.println(pair.get(1) + " " + pair.get(0));
+            }
+            pw.close();
         }
-        pw.close();
     }
 
     private HashMap<ArrayList<Integer>, Integer> calNodeSets(HashMap<ArrayList<Integer>, Integer> scaledJointDegreeDis, int i) {

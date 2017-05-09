@@ -28,6 +28,7 @@ public class DegreeScaling {
 
     private HashMap<Integer, Integer> saticScale(HashMap<Integer, Integer> orders, double s_n) {
         HashMap<Integer, Integer> results = new HashMap<>();
+        // delete it or not? by swike
         ArrayList<Integer> x = new ArrayList<>();
 
         for (Entry<Integer, Integer> entry : orders.entrySet()) {
@@ -35,11 +36,7 @@ public class DegreeScaling {
             int val = calExpectation(s_n * entry.getValue());
             results.put(entry.getKey(), val);
         }
-
         return results;
     }
 
-   
-
-  
 }

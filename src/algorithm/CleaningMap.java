@@ -6,11 +6,8 @@ package algorithm;
  * and open the template in the editor.
  */
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 public class CleaningMap {
 

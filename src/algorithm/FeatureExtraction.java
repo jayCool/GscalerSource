@@ -6,13 +6,11 @@
 package algorithm;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,14 +22,13 @@ import java.util.logging.Logger;
  * @author workshop
  */
 public class FeatureExtraction {
-
     int minMaxDegree = 0;
    
     public DistributionFeature extractInformation(String originfile) {
         DistributionFeature disFeature = new DistributionFeature();
         
-        HashMap<String, Integer> idIndegreeCounts = new HashMap<String, Integer>();
-        HashMap<String, Integer> idOutdegreeCounts = new HashMap<String, Integer>();
+        HashMap<String, Integer> idIndegreeCounts = new HashMap<>();
+        HashMap<String, Integer> idOutdegreeCounts = new HashMap<>();
         
         count_in_out_degree(originfile, idIndegreeCounts, idOutdegreeCounts);
         
@@ -123,19 +120,17 @@ public class FeatureExtraction {
     }
 
     private void construct_correlation_function(String originfile, HashMap<String, ArrayList<Integer>> idDegree, DistributionFeature disFeature) {
-        try {
+        try (BufferedReader bb = new BufferedReader(new InputStreamReader(new FileInputStream(originfile)))) {
             int edgesize = 0;
-            InputStream input = null;
-
-            input = new FileInputStream(originfile);
-            BufferedReader bb = new BufferedReader(new InputStreamReader(input));
-
+//            InputStream input = null;
+//
+//            input = ;
             String line = bb.readLine();
             while (line != null) {
                 String temp[] = line.split("[^a-zA-Z0-9']+");
                 String u = temp[1];
                 String f = temp[0];
-                if (u != f) {
+                if (!u.equals(f)) {
                     ArrayList<Integer> arr1 = idDegree.get(u);
                     ArrayList<Integer> arr2 = idDegree.get(f);
                     ArrayList<ArrayList<Integer>> arrs = new ArrayList<>(2);
@@ -154,7 +149,7 @@ public class FeatureExtraction {
             bb.close();
             disFeature.nodeSize = idDegree.size();
             disFeature.edgeSize = edgesize;
-           } catch (FileNotFoundException ex) {
+        } catch (FileNotFoundException ex) {
             Logger.getLogger(CommandParser.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(CommandParser.class.getName()).log(Level.SEVERE, null, ex);
