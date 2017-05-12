@@ -1,7 +1,7 @@
 This tool implements the algorithm of GScaler Algorithm published in EDBT2016.
-
 https://openproceedings.org/2016/conf/edbt/paper-68.pdf
  
+It is implemented using Netbeans IDE.
 
 To run the command:
 
