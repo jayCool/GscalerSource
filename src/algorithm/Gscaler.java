@@ -17,6 +17,8 @@ import java.util.Map;
 /**
  *
  * @author Zhang Jiangwei
+ * Special Note: Degree scaling is purposely written in sequential algorithm.
+ * Users can easily modify it to parallel which improves the efficiency by ~30% by using multi-threading.
  */
 public class Gscaler {
     int scaledEdgeSize;
