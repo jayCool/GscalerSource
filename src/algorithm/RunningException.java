@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author workshop
+ * @author Zhang Jiangwei
  */
 public class RunningException {
 

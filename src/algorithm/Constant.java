@@ -7,7 +7,7 @@ package algorithm;
 
 /**
  *
- * @author workshop
+ * @author Zhang Jiangwei
  */
 public class Constant {
     public static int CLEANING_THRESHOLD=10;

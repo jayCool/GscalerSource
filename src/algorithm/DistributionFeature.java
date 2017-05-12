@@ -10,7 +10,7 @@ import java.util.HashMap;
 
 /**
  *
- * @author workshop
+ * @author Zhang Jiangwei
  */
 public class DistributionFeature {
 

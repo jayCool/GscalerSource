@@ -68,8 +68,8 @@ public class Gscaler {
 
         System.out.println("Edge generation");
         EdgeLink edgelink = new EdgeLink();
-        HashSet<ArrayList<Integer>> edgeList = edgelink.run(scaledFeature.jointdegreeDis, scaledFeature.correlationFunction);
-
+        HashSet<ArrayList<Integer>> edgeList = edgelink.generateLinks(scaledFeature.jointdegreeDis, scaledFeature.correlationFunction);
+        
         if (edgeList.size() < this.scaledEdgeSize) {
             System.out.println("missing: " + (scaledEdgeSize - edgeList.size()));
             finalCheck(edgeList);
@@ -98,7 +98,11 @@ public class Gscaler {
         }
         return result;
     }
-
+    
+    /**
+     * Checks if the edgelist satisfy the scaledEdgeSize
+     * @param edgeList 
+     */
     private void finalCheck(HashSet<ArrayList<Integer>> edgeList) {
         HashSet<Integer> nodes = new HashSet<>();
 
