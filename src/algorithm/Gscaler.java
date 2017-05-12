@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  *
- * @author workshop
+ * @author Zhang Jiangwei
  */
 public class Gscaler {
     int scaledEdgeSize;
@@ -41,29 +41,30 @@ public class Gscaler {
         scaledFeature.edgeSize = scaledEdgeSize;
 
         System.out.println("scale degrees");
-
         DegreeScaling indegScale = new DegreeScaling();
         scaledFeature.indegreeDis = indegScale.scale(originalFeature.indegreeDis, scaledFeature.edgeSize, scaledFeature.nodeSize,
                 1.0 * scaledFeature.nodeSize / originalFeature.nodeSize);
 
         DegreeScaling outdegScale = new DegreeScaling();
         scaledFeature.outdegreeDis = outdegScale.scale(originalFeature.outdegreeDis, scaledFeature.edgeSize, scaledFeature.nodeSize, 1.0 * scaledFeature.nodeSize / originalFeature.nodeSize);
-
+        
+        
         System.out.println("synthesis nodes");
         NodeSynthesis nodeSyn = new NodeSynthesis(1.0 * scaledFeature.nodeSize / originalFeature.nodeSize);
         scaledFeature.jointdegreeDis
-                = nodeSyn.produceCorrel(scaledFeature.outdegreeDis, scaledFeature.indegreeDis, originalFeature.jointdegreeDis);
+                = nodeSyn.synthesizeNode(scaledFeature.outdegreeDis, scaledFeature.indegreeDis, originalFeature.jointdegreeDis);
 
         System.out.println("format conversion");
-        HashMap<ArrayList<Integer>, Integer> scaleTargetNodes = calNodeSets( scaledFeature.jointdegreeDis, 0);
-        HashMap<ArrayList<Integer>, Integer> scaleSourceNodes = calNodeSets( scaledFeature.jointdegreeDis, 1);
+        HashMap<ArrayList<Integer>, Integer> scaleTargetNodes = calNodeAppearances( scaledFeature.jointdegreeDis, 0);
+        HashMap<ArrayList<Integer>, Integer> scaleSourceNodes = calNodeAppearances( scaledFeature.jointdegreeDis, 1);
 
         System.out.println("Edge correlation");
         double s_n = 1.0 * scaledFeature.nodeSize / originalFeature.nodeSize;
         double s_e = 1.0 * scaledFeature.edgeSize / originalFeature.edgeSize / s_n - 1;
 
+        
         CorrelationFunctionScaling correlationFunctionScaling = new CorrelationFunctionScaling(scaledFeature.jointdegreeDis, originalFeature.jointdegreeDis, s_e, s_n);
-        scaledFeature.correlationFunction = correlationFunctionScaling.run(originalFeature.correlationFunction, scaleTargetNodes, scaleSourceNodes);
+        scaledFeature.correlationFunction = correlationFunctionScaling.synthesize(originalFeature.correlationFunction, scaleTargetNodes, scaleSourceNodes);
 
         System.out.println("Edge generation");
         EdgeLink edgelink = new EdgeLink();
@@ -83,7 +84,14 @@ public class Gscaler {
         }
     }
 
-    private HashMap<ArrayList<Integer>, Integer> calNodeSets(HashMap<ArrayList<Integer>, Integer> scaledJointDegreeDis, int i) {
+    
+    /**
+     * This method calculates the appearance of the nodes
+     * @param scaledJointDegreeDis
+     * @param i (indegree/outdegree)
+     * @return The appearance of the node sets
+     */
+    private HashMap<ArrayList<Integer>, Integer> calNodeAppearances(HashMap<ArrayList<Integer>, Integer> scaledJointDegreeDis, int i) {
         HashMap<ArrayList<Integer>, Integer> result = new HashMap<>();
         for (Map.Entry<ArrayList<Integer>, Integer> entry : scaledJointDegreeDis.entrySet()) {
             result.put(entry.getKey(), entry.getValue() * entry.getKey().get(i));

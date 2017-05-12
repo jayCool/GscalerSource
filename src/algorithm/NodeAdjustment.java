@@ -11,6 +11,12 @@ import java.util.HashMap;
 
 public class NodeAdjustment {
 
+    /**
+     * This method returns the sum of the elements in x
+     *
+     * @param x
+     * @return
+     */
     private int sumVector(ArrayList<Integer> x) {
         int sum = 0;
         for (int y : x) {
@@ -19,58 +25,119 @@ public class NodeAdjustment {
         return sum;
     }
 
-    private void extending_x_value(ArrayList<Integer> degreeList, ArrayList<Integer> value) {
+    /**
+     * This method does the following: (1) smoothing the degrees, example
+     * [1,3,4,5,7] ==> [1,2,3,4,5,6,7] (2) extending the largest degree
+     *
+     * @param degreeList
+     * @param frequencies
+     */
+    private void smoothAndExtendDegrees(ArrayList<Integer> degreeList, ArrayList<Integer> frequencies) {
         for (int i = 0; i < degreeList.get(degreeList.size() - 1); i++) {
             if (!degreeList.contains(i)) {
                 degreeList.add(i, i);
-                value.add(i, 0);
+                frequencies.add(i, 0);
             }
         }
         for (int i = 0; i < Math.min(Constant.CLEANING_THRESHOLD, degreeList.size() / Constant.CLEANING_THRESHOLD); i++) {
             degreeList.add(degreeList.size());
-            value.add(0);
+            frequencies.add(0);
         }
     }
 
+    /**
+     * This method adjusts the degree distribution to make sure it satisfies the
+     * scaledNodeSize.
+     *
+     * @param degreeDis
+     * @param scaledNodeSize
+     */
     public void adjustment(HashMap<Integer, Integer> degreeDis, int scaledNodeSize) {
+        ArrayList<Integer> degreeList = extractDegreeList(degreeDis);
+
+        ArrayList<Integer> frequencies = coordinateTheFrequencies(degreeDis, degreeList);
+
+        smoothAndExtendDegrees(degreeList, frequencies);
+
+        evenDistributionOfDiffs(scaledNodeSize, frequencies);
+
+        randomAdjustmentForDiffs(frequencies, scaledNodeSize);
+
+        degreeDis.clear();
+
+        for (int i = 0; i < degreeList.size(); i++) {
+            degreeDis.put(degreeList.get(i), frequencies.get(i));
+        }
+
+    }
+
+    /**
+     * This method extract the sorted degrees, [1,2,3,4,6,...]
+     *
+     * @param degreeDis
+     * @return sorted degree list
+     */
+    private ArrayList<Integer> extractDegreeList(HashMap<Integer, Integer> degreeDis) {
         ArrayList<Integer> degreeList = new ArrayList<>();
         for (int degree : degreeDis.keySet()) {
             degreeList.add(degree);
         }
         Collections.sort(degreeList);
+        return degreeList;
+    }
 
-        ArrayList<Integer> value = new ArrayList<>();
+    /**
+     * Given the degree list, and degree frequency HashMap, it returns the
+     * frequency list.
+     *
+     * @param degreeDis
+     * @param degreeList
+     * @return ordered frequencies
+     */
+    private ArrayList<Integer> coordinateTheFrequencies(HashMap<Integer, Integer> degreeDis, ArrayList<Integer> degreeList) {
+        ArrayList<Integer> frequencies = new ArrayList<>();
         for (int degree : degreeList) {
             if (!degreeDis.containsKey(degree)) {
-                value.add(0);
+                frequencies.add(0);
             } else {
-                value.add(degreeDis.get(degree));
+                frequencies.add(degreeDis.get(degree));
             }
         }
+        return frequencies;
+    }
 
-        extending_x_value(degreeList, value);
+    
+    /**
+     * Distribute the diffs proportionally to the frequencies
+     * 
+     * @param scaledNodeSize
+     * @param frequencies 
+     */
+    private void evenDistributionOfDiffs(int scaledNodeSize, ArrayList<Integer> frequencies) {
+        int vertexSum = sumVector(frequencies);
 
-        int vtex_number = sumVector(value);
-        int diffs = scaledNodeSize - vtex_number;
-        for (int i = 0; i < degreeList.size(); i++) {
-            double ratio = (int) 1.0 * value.get(i) / vtex_number;
-            value.set(i, Math.max(0, (int) (ratio * diffs) + value.get(i)));
+        int diffs = scaledNodeSize - vertexSum;
+        for (int i = 0; i < frequencies.size(); i++) {
+            double ratio = (int) 1.0 * frequencies.get(i) / vertexSum;
+            frequencies.set(i, Math.max(0, (int) (ratio * diffs) + frequencies.get(i)));
         }
-        
-        vtex_number = sumVector(value);
-        diffs = scaledNodeSize - vtex_number;
+    }
+
+    /**
+     * Randomly pick up the degrees, and modifies the frequencies by 1.
+     * @param frequencies
+     * @param scaledNodeSize 
+     */
+    private void randomAdjustmentForDiffs(ArrayList<Integer> frequencies, int scaledNodeSize) {
+        int vertexSum = sumVector(frequencies);
+        int diffs = scaledNodeSize - vertexSum;
         int adjustingIndex = 0;
 
         while (diffs != 0) {
-            value.set(adjustingIndex, Math.max(0, value.get(adjustingIndex) + Math.abs(diffs) / diffs));
-            adjustingIndex = (adjustingIndex + 1) % (value.size()-1);
-            vtex_number = sumVector(value);
-            diffs = scaledNodeSize - vtex_number;
-        }
-        degreeDis.clear();
-       
-        for (int i = 0; i < degreeList.size(); i++) {
-            degreeDis.put(degreeList.get(i), value.get(i));
+            frequencies.set(adjustingIndex, Math.max(0, frequencies.get(adjustingIndex) + Math.abs(diffs) / diffs));
+            adjustingIndex = (adjustingIndex + 1) % (frequencies.size() - 1);
+            vertexSum = sumVector(frequencies);
+            diffs = scaledNodeSize - vertexSum;
         }
 
     }

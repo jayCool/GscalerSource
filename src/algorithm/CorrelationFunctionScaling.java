@@ -1,21 +1,19 @@
 package algorithm;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 
- /*
- * @author workshop
+/*
+ * @author Zhang Jiangwei
+ * Special Note: The nearest source Node/targetNode can be found using the mapping from node synthesis
  */
 public class CorrelationFunctionScaling {
+
     private double s_n = 0.2;
     private double s_e = 0.0;
 
@@ -24,13 +22,9 @@ public class CorrelationFunctionScaling {
     HashMap<Integer, ArrayList<ArrayList<Integer>>> targetDisMap = new HashMap<>();
     private final HashMap<ArrayList<Integer>, Integer> originalJointDegreeDis;
 
-    int level = 0;
-    boolean finalFlag = false;
+    int maxRange = 0;
 
-    List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sortedCorrelation;
-
-    HashMap<Integer, ArrayList<ArrayList<Integer>>> traversalOrders = new HashMap<>();
-    int loop = 1;
+    int iterationNumber = 0;
 
     CorrelationFunctionScaling(HashMap<ArrayList<Integer>, Integer> jointdegreeDis,
             HashMap<ArrayList<Integer>, Integer> jointdegreeDis0, double s_e, double s_n) {
@@ -40,55 +34,71 @@ public class CorrelationFunctionScaling {
         this.s_n = s_n;
     }
 
-     HashMap<ArrayList<ArrayList<Integer>>, Integer> run(HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedOriginal,
-            HashMap<ArrayList<Integer>, Integer> scaleTargetNodes, 
+    HashMap<ArrayList<ArrayList<Integer>>, Integer> synthesize(HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedOriginal,
+            HashMap<ArrayList<Integer>, Integer> scaleTargetNodes,
             HashMap<ArrayList<Integer>, Integer> scaleSourceNodes) throws FileNotFoundException {
-        loop = 0;
+        iterationNumber = 0;
         HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedScale = new HashMap<>();
 
-        produceCorrel(scaleSourceNodes, scaleTargetNodes, correlatedOriginal, correlatedScale);
+        synthesizeCorrelationFunction(scaleSourceNodes, scaleTargetNodes, correlatedOriginal, correlatedScale);
 
         doubleChecking(correlatedScale);
 
         return correlatedScale;
     }
 
-    private void produceCorrel(
+    /**
+     *
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     * @param correlatedOriginal
+     * @param correlatedScale
+     * @throws FileNotFoundException
+     */
+    private void synthesizeCorrelationFunction(
             HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes,
             HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedOriginal,
             HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedScale) throws FileNotFoundException {
 
-        sort_correlation(correlatedOriginal);
+        List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sortedOriginalCorrelationFunction = sortCorrelation(correlatedOriginal);
 
-        int num = cal_min_leftOver(scaleSourceNodes, scaleTargetNodes);
+        int num = calMinLeftOverFrequencies(scaleSourceNodes, scaleTargetNodes);
 
-        produceTraversalOrders();
+        HashMap<Integer, ArrayList<ArrayList<Integer>>> traversalOrders = produceTraversalOrders();
 
-        while (!scaleSourceNodes.keySet().isEmpty() && !scaleTargetNodes.keySet().isEmpty() && loop <= 2 && num > 1000) {
+        while (!scaleSourceNodes.keySet().isEmpty() && !scaleTargetNodes.keySet().isEmpty() && iterationNumber <= 1 && num > 1000) {
             processDistanceMap(scaleSourceNodes, sourecDisMap);
             processDistanceMap(scaleTargetNodes, targetDisMap);
 
-            mapping(scaleSourceNodes, scaleTargetNodes, correlatedScale);
+            loopForCorrelationFunctionSynthesizing(traversalOrders, scaleSourceNodes, scaleTargetNodes, correlatedScale, sortedOriginalCorrelationFunction);
 
-            num = cal_min_leftOver(scaleSourceNodes, scaleTargetNodes);
-            loop += 2;
+            num = calMinLeftOverFrequencies(scaleSourceNodes, scaleTargetNodes);
+            iterationNumber += 1;
         }
 
-        finalFlag = true;
-        randomMapping(correlatedScale, scaleSourceNodes, scaleTargetNodes);
-//        num = cal_min_leftOver(scaleSourceNodes, scaleTargetNodes);   //delete or not?
+        randomSynthesize(correlatedScale, scaleSourceNodes, scaleTargetNodes);
 
-        rewiring(scaleSourceNodes, scaleTargetNodes, correlatedScale);
+        adjustExistingDistribution(scaleSourceNodes, scaleTargetNodes, correlatedScale);
 
-        num = cal_min_leftOver(scaleSourceNodes, scaleTargetNodes);
-        if (num < 0){
+        num = calMinLeftOverFrequencies(scaleSourceNodes, scaleTargetNodes);
+        if (num < 0) {
             System.err.println("exception");
         }
     }
 
-    // produce the order of traversal
-    void produceTraversalOrders() {
-        for (int i = 0; i < 2*Constant.CLEANING_THRESHOLD; i++) {
+    /**
+     *
+     *
+     * Calculate the traversal order of the 2d join degree vector For faster
+     * norm 1 calculation
+     *
+     * @return traversalOrders
+     *
+     *
+     */
+    HashMap<Integer, ArrayList<ArrayList<Integer>>> produceTraversalOrders() {
+        HashMap<Integer, ArrayList<ArrayList<Integer>>> traversalOrders = new HashMap<>();
+        for (int i = 0; i < 2 * Constant.CLEANING_THRESHOLD; i++) {
             ArrayList<ArrayList<Integer>> pairs = new ArrayList<>();
             for (int j = 0; j <= i; j++) {
                 ArrayList<Integer> p1 = new ArrayList<>();
@@ -98,32 +108,50 @@ public class CorrelationFunctionScaling {
             }
             traversalOrders.put(i, pairs);
         }
+        return traversalOrders;
     }
 
-    private HashMap<ArrayList<ArrayList<Integer>>, Integer> mapping(
+    /**
+     * The method synthesize correlation function by combining elements from
+     * scaledSourceNodes/scaledTargetNodes The rule is following the original
+     * correlation function, The result are stored in scaledCorrelationFunction
+     *
+     * @param traversalOrders
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     * @param scaledCorrelationFunction
+     * @param sortedOriginalCorrelationFunction
+     */
+    private void loopForCorrelationFunctionSynthesizing(HashMap<Integer, ArrayList<ArrayList<Integer>>> traversalOrders,
             HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes,
-            HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedScale) {
+            HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction, List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sortedOriginalCorrelationFunction) {
 
-        int value = 0;
-        level = (int) (Math.pow(10, loop - 1));
+        int scaledFrequency = 0;
+        maxRange = (int) (Math.pow(10, iterationNumber * 2 - 1));
 
-        for (int i = 0; i < sortedCorrelation.size() && !scaleSourceNodes.keySet().isEmpty() && !scaleTargetNodes.keySet().isEmpty(); i++) {
-            Map.Entry<ArrayList<ArrayList<Integer>>, Integer> entry = sortedCorrelation.get(i);
+        for (int i = 0; i < sortedOriginalCorrelationFunction.size() && !scaleSourceNodes.keySet().isEmpty() && !scaleTargetNodes.keySet().isEmpty(); i++) {
+            Map.Entry<ArrayList<ArrayList<Integer>>, Integer> originalCorrelationFunctionEntry = sortedOriginalCorrelationFunction.get(i);
 
-            value = cal_value(entry);
-            if (value == 0) {
+            scaledFrequency = scaleFrequency(originalCorrelationFunctionEntry.getValue());
+            if (scaledFrequency == 0) {
                 continue;
             }
 
-            ArrayList<Integer> targetDegree = entry.getKey().get(0);
-            ArrayList<Integer> sourceDegree = entry.getKey().get(1);
-            updateValue(scaleSourceNodes, scaleTargetNodes, sourceDegree, targetDegree, traversalOrders, value, correlatedScale);
+            ArrayList<Integer> targetDegree = originalCorrelationFunctionEntry.getKey().get(0);
+            ArrayList<Integer> sourceDegree = originalCorrelationFunctionEntry.getKey().get(1);
+
+            synthesizeIndividualCorrelationFunction(scaleSourceNodes, scaleTargetNodes, sourceDegree, targetDegree, traversalOrders, scaledFrequency, scaledCorrelationFunction);
         }
 
-        return correlatedScale;
     }
 
-    private int cal_min_leftOver(HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes) {
+    /**
+     *
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     * @return minimum sum of frequencies
+     */
+    private int calMinLeftOverFrequencies(HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes) {
         int sum1 = 0;
         for (int v : scaleSourceNodes.values()) {
             sum1 += v;
@@ -136,7 +164,14 @@ public class CorrelationFunctionScaling {
         return Math.min(sum1, sum);
     }
 
-    private void randomMapping(HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedScale,
+    /**
+     * This method randomly synthesize left-over nodes
+     *
+     * @param scaledCorrelationFunction
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     */
+    private void randomSynthesize(HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction,
             HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes) {
         ArrayList<ArrayList<Integer>> calSourceDegrees = new ArrayList<>(scaleSourceNodes.keySet());
         ArrayList<ArrayList<Integer>> calTargetDegrees = new ArrayList<>(scaleTargetNodes.keySet());
@@ -145,70 +180,57 @@ public class CorrelationFunctionScaling {
             if (scaleSourceNodes.get(calSourceDegree) == 0) {
                 continue;
             }
+
             for (ArrayList<Integer> calTargetDegree : calTargetDegrees) {
+                //checking early return or break or continue
                 if (scaleSourceNodes.keySet().isEmpty() || scaleTargetNodes.keySet().isEmpty()) {
                     return;
                 }
 
-                if (!scaleSourceNodes.containsKey(calSourceDegree) || !scaleTargetNodes.containsKey(calTargetDegree)) {
-                    continue;
-                }
-
-                int value = scaleSourceNodes.get(calSourceDegree);
-                if (CleaningMap.cleanHashMap(scaleSourceNodes, calSourceDegree)){
+                if (CleaningMap.cleanHashMap(scaleSourceNodes, calSourceDegree)) {
                     break;
                 }
-                value = Math.min(value, scaleTargetNodes.get(calTargetDegree));
-                if (CleaningMap.cleanHashMap(scaleTargetNodes, calTargetDegree)){
+                if (CleaningMap.cleanHashMap(scaleTargetNodes, calTargetDegree)) {
                     continue;
                 }
+                //finish checking early return or break or continue
 
-                ArrayList<ArrayList<Integer>> edge_correlation = new ArrayList<>();
-                edge_correlation.add(calTargetDegree);
-                edge_correlation.add(calSourceDegree);
+                ArrayList<ArrayList<Integer>> edgeCorrelation = new ArrayList<>();
+                edgeCorrelation.add(calTargetDegree);
+                edgeCorrelation.add(calSourceDegree);
 
-                int oldV = 0;
-                if (correlatedScale.containsKey(edge_correlation)) {
-                    oldV = correlatedScale.get(edge_correlation);
-                }
-
-                value = (int) Math.min(value, 1.0 * this.scaleJointDegreeDis.get(calSourceDegree) * this.scaleJointDegreeDis.get(calTargetDegree) - oldV);
-                if (calSourceDegree.equals(calTargetDegree)) {
-                    value = (int) Math.min(value, 1.0 * this.scaleJointDegreeDis.get(calSourceDegree) * (this.scaleJointDegreeDis.get(calTargetDegree) - 1) - oldV);
-                }
-
-                if (value <= 0) {
+                int incrementedFrequency = calculateIncrementedFrequency(scaledCorrelationFunction, edgeCorrelation, calSourceDegree, scaleSourceNodes, calTargetDegree, scaleTargetNodes);
+                if (incrementedFrequency <= 0) {
                     continue;
                 }
-
-                scaleSourceNodes.put(calSourceDegree, scaleSourceNodes.get(calSourceDegree) - value);
-                scaleTargetNodes.put(calTargetDegree, scaleTargetNodes.get(calTargetDegree) - value);
-
-                correlatedScale.put(edge_correlation, value + oldV);
                 
-                CleaningMap.cleanHashMap(scaleTargetNodes, calTargetDegree);
-                CleaningMap.cleanHashMap(scaleSourceNodes, calSourceDegree);
-               
+                updateSourceTargetCorrelationFunction(scaleSourceNodes, scaleTargetNodes, calSourceDegree, calTargetDegree, incrementedFrequency, scaledCorrelationFunction, edgeCorrelation);
+
             }
         }
     }
-
-    private void rewiring(HashMap<ArrayList<Integer>, Integer> scaleSourceNodes,
+    
+    
+    /**
+     * Breaks the existing edge correlation
+     * Forms two more edge correlation
+     * 
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     * @param scaledCorrelationFunction 
+     */
+    private void adjustExistingDistribution(HashMap<ArrayList<Integer>, Integer> scaleSourceNodes,
             HashMap<ArrayList<Integer>, Integer> scaleTargetNodes,
-            HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedScale) {
+            HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction) {
 
-        HashMap<ArrayList<ArrayList<Integer>>, Integer> tempResult = new HashMap<>();
-        for (Map.Entry<ArrayList<ArrayList<Integer>>, Integer> entry : correlatedScale.entrySet()) {
-            tempResult.put(entry.getKey(), entry.getValue());
-        }
-        List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sortedEntries
-                = new Sort().sortOnKeySum(tempResult);
+        List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sortedEntries = calculateSortedEntries(scaledCorrelationFunction);
 
         int mapCount = 0;
 
         ArrayList<ArrayList<Integer>> sourceList = extractSourceList(scaleSourceNodes);
 
         for (ArrayList<Integer> sourceDegree : sourceList) {
+            //cleaning zero frequency entries
             if (CleaningMap.cleanHashMap(scaleSourceNodes, sourceDegree)) {
                 continue;
             }
@@ -217,39 +239,42 @@ public class CorrelationFunctionScaling {
                 CleaningMap.removeZero(scaleTargetNodes);
                 mapCount = 0;
             }
+            //finish cleaning
 
             for (ArrayList<Integer> targetDegree : scaleTargetNodes.keySet()) {
+                //cleaning zer0 frequency entries
                 if (CleaningMap.cleanHashMap(scaleSourceNodes, sourceDegree)) {
                     break;
                 }
                 if (scaleTargetNodes.get(targetDegree) <= 0) {
+                    mapCount++;
                     continue;
                 }
-                for (int j = 0; j < sortedEntries.size(); j++) {
-                    ArrayList<ArrayList<Integer>> originalMapping = sortedEntries.get(j).getKey();
-                    int capMin = correlatedScale.get(originalMapping);
-                    if (capMin > 0) {
-                        ArrayList<Integer> originalTarget = originalMapping.get(0);
-                        ArrayList<Integer> originalSource = originalMapping.get(1);
+                //finish cleaning
+                
+                Random rand = new Random();
+                int currentIndex = rand.nextInt(sortedEntries.size());
+                for (int counter = 0; counter < sortedEntries.size(); counter++) {
+                    currentIndex = (currentIndex + 1) % sortedEntries.size();
+                    ArrayList<ArrayList<Integer>> existingEdgeCorrelation = sortedEntries.get(currentIndex).getKey();
 
-                        ArrayList<ArrayList<Integer>> pair1 = paring(targetDegree, originalSource);
-                        ArrayList<ArrayList<Integer>> pair2 = paring(originalTarget, sourceDegree);
+                    int adjustableNumber = scaledCorrelationFunction.get(existingEdgeCorrelation);
 
-                        int count1 = getCount(pair1, correlatedScale);
-                        int count2 = getCount(pair2, correlatedScale);
+                    if (adjustableNumber > 0) {
+                        ArrayList<Integer> originalTarget = existingEdgeCorrelation.get(0);
+                        ArrayList<Integer> originalSource = existingEdgeCorrelation.get(1);
 
-                        int cap1 = this.scaleJointDegreeDis.get(targetDegree) * this.scaleJointDegreeDis.get(originalSource) - count1;
-                        int cap2 = this.scaleJointDegreeDis.get(originalTarget) * this.scaleJointDegreeDis.get(sourceDegree) - count2;
+                        ArrayList<ArrayList<Integer>> newPair1 = paring(targetDegree, originalSource);
+                        ArrayList<ArrayList<Integer>> newPair2 = paring(originalTarget, sourceDegree);
 
-                        capMin = getMinimum(cap1, cap2, capMin, scaleTargetNodes, targetDegree, scaleSourceNodes, sourceDegree);
+                        if (newPair1.equals(newPair2) || originalTarget.equals(sourceDegree) || targetDegree.equals(originalSource)) {
+                            continue;
+                        }
 
-                        if (!pair1.equals(pair2) && !originalTarget.equals(sourceDegree) && !targetDegree.equals(originalSource) && capMin > 0) {
-                            int reduce = capMin;
-                            correlatedScale.put(originalMapping, correlatedScale.get(originalMapping) - reduce);
-                            correlatedScale.put(pair2, count2 + reduce);
-                            correlatedScale.put(pair1, count1 + reduce);
-                            scaleSourceNodes.put(sourceDegree, scaleSourceNodes.get(sourceDegree) - reduce);
-                            scaleTargetNodes.put(targetDegree, scaleTargetNodes.get(targetDegree) - reduce);
+                        adjustableNumber = calAdjustableNumber(scaleSourceNodes, scaleTargetNodes, newPair1, newPair2, scaledCorrelationFunction, targetDegree, sourceDegree, originalSource, originalTarget, adjustableNumber);
+
+                        if (adjustableNumber > 0) {
+                            updateTwoNewPairs(existingEdgeCorrelation, scaledCorrelationFunction, adjustableNumber, newPair1, newPair2, sourceDegree, targetDegree, scaleSourceNodes, scaleTargetNodes);
 
                             if (scaleTargetNodes.get(targetDegree) <= 0) {
                                 mapCount++;
@@ -266,6 +291,13 @@ public class CorrelationFunctionScaling {
 
     }
 
+    /**
+     * The method returns a map, where the key is the sum of the joint-degree,
+     * and the value is the joint-degrees with that sum
+     *
+     * @param calSource
+     * @param sourceDisMap
+     */
     private void processDistanceMap(HashMap<ArrayList<Integer>, Integer> calSource, HashMap<Integer, ArrayList<ArrayList<Integer>>> sourceDisMap) {
         sourceDisMap.clear();
 
@@ -280,28 +312,46 @@ public class CorrelationFunctionScaling {
             sourceDisMap.get(sum).add(sourceEntry.getKey());
         }
     }
-
-    private void updateValue(HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes,
+    
+    
+    /**
+     * Given each individual correlation function entry,
+     * it synthesizes the nodes.
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     * @param sourceDegree
+     * @param targetDegree
+     * @param traversalOrders
+     * @param scaledFrequency
+     * @param correlatedScale 
+     */
+    private void synthesizeIndividualCorrelationFunction(HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes,
             ArrayList<Integer> sourceDegree, ArrayList<Integer> targetDegree,
-            HashMap<Integer, ArrayList<ArrayList<Integer>>> traversalOrders, int value,
+            HashMap<Integer, ArrayList<ArrayList<Integer>>> traversalOrders, int scaledFrequency,
             HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedScale) {
 
-        ArrayList<ArrayList<Integer>> sourcePools = new ArrayList<>();
-        ArrayList<ArrayList<Integer>> targetPools = new ArrayList<>();
+        ArrayList<ArrayList<Integer>> sourceNodePools = new ArrayList<>();
+        ArrayList<ArrayList<Integer>> targetNodePools = new ArrayList<>();
 
         int sourceSum = sourceDegree.get(0) + sourceDegree.get(1);
         int targetSum = targetDegree.get(0) + targetDegree.get(1);
 
-        calCandidatePool(sourceSum, targetSum, scaleSourceNodes, scaleTargetNodes, sourcePools, targetPools);
+        calculateCandidatePool(sourceSum, targetSum, scaleSourceNodes, scaleTargetNodes, sourceNodePools, targetNodePools);
 
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> calSourceOrdered = norm1Closest(sourceDegree, sourcePools);
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> calTargetOrdered = norm1Closest(targetDegree, targetPools);
+        HashMap<Integer, ArrayList<ArrayList<Integer>>> calSourceOrdered = norm1ClosestJointDegree(sourceDegree, sourceNodePools);
+        HashMap<Integer, ArrayList<ArrayList<Integer>>> calTargetOrdered = norm1ClosestJointDegree(targetDegree, targetNodePools);
 
-        traversal(traversalOrders, calSourceOrdered, calTargetOrdered, scaleSourceNodes, scaleTargetNodes, value, correlatedScale);
+        traversalOverTheCandidates(traversalOrders, calSourceOrdered, calTargetOrdered, scaleSourceNodes, scaleTargetNodes, scaledFrequency, correlatedScale);
 
     }
 
-    private HashMap<Integer, ArrayList<ArrayList<Integer>>> norm1Closest(
+    /**
+     *
+     * @param sourceDegree
+     * @param sourcePools
+     * @return distance map of the candidates
+     */
+    private HashMap<Integer, ArrayList<ArrayList<Integer>>> norm1ClosestJointDegree(
             ArrayList<Integer> sourceDegree, ArrayList<ArrayList<Integer>> sourcePools) {
 
         HashMap<Integer, ArrayList<ArrayList<Integer>>> ordered = new HashMap<>();
@@ -312,7 +362,7 @@ public class CorrelationFunctionScaling {
             max = Math.max(diff, max);
 
             // type does not match. by swike
-            if (!ordered.containsKey(sample)) {
+            if (!ordered.containsKey(diff)) {
                 ordered.put(diff, new ArrayList<ArrayList<Integer>>());
             }
             ordered.get(diff).add(sample);
@@ -322,11 +372,20 @@ public class CorrelationFunctionScaling {
         ordered.get(0).add(sourceDegree);
         return ordered;
     }
-
-    private void calCandidatePool(int sourceSum, int targetSum, HashMap<ArrayList<Integer>, Integer> scaleSourceNodes,
+    
+    /**
+     * This method calculates the candidates based on the sum distance.
+     * @param sourceSum
+     * @param targetSum
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     * @param sourcePools
+     * @param targetPools 
+     */
+    private void calculateCandidatePool(int sourceSum, int targetSum, HashMap<ArrayList<Integer>, Integer> scaleSourceNodes,
             HashMap<ArrayList<Integer>, Integer> scaleTargetNodes,
             ArrayList<ArrayList<Integer>> sourcePools, ArrayList<ArrayList<Integer>> targetPools) {
-        for (int i = -1 * level; i <= level; i++) {
+        for (int i = -1 * maxRange; i <= maxRange; i++) {
             if (sourecDisMap.containsKey(i + sourceSum)) {
                 for (ArrayList<Integer> r : sourecDisMap.get(i + sourceSum)) {
                     if (scaleSourceNodes.containsKey(r)) {
@@ -334,7 +393,7 @@ public class CorrelationFunctionScaling {
                     }
                 }
             }
-            /* + else ? */ if (targetDisMap.containsKey(i + targetSum)) {
+            if (targetDisMap.containsKey(i + targetSum)) {
                 for (ArrayList<Integer> r : targetDisMap.get(i + targetSum)) {
                     if (scaleTargetNodes.containsKey(r)) {
                         targetPools.add(r);
@@ -344,54 +403,54 @@ public class CorrelationFunctionScaling {
 
         }
     }
-
-    private void traversal(HashMap<Integer, ArrayList<ArrayList<Integer>>> traversalOrders,
+    
+    
+    /**
+     * Traversal over the nodes based on the norm 1 distance between 2d vectors
+     * @param traversalOrders
+     * @param calSourceOrdered
+     * @param calTargetOrdered
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     * @param scaledFrequency
+     * @param correlatedScale 
+     */
+    private void traversalOverTheCandidates(HashMap<Integer, ArrayList<ArrayList<Integer>>> traversalOrders,
             HashMap<Integer, ArrayList<ArrayList<Integer>>> calSourceOrdered,
             HashMap<Integer, ArrayList<ArrayList<Integer>>> calTargetOrdered,
             HashMap<ArrayList<Integer>, Integer> scaleSourceNodes,
-            HashMap<ArrayList<Integer>, Integer> scaleTargetNodes, int value,
+            HashMap<ArrayList<Integer>, Integer> scaleTargetNodes, int scaledFrequency,
             HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedScale) {
-        int budget = value;
+        int budget = scaledFrequency;
 
-        for (int k = 0; k < 10 && k < traversalOrders.size(); k++) {
+        for (int k = 0; k < traversalOrders.size(); k++) {
             for (ArrayList<Integer> pair : traversalOrders.get(k)) {
                 if (calTargetOrdered.containsKey(pair.get(1)) && calSourceOrdered.containsKey(pair.get(0))) {
                     ArrayList<ArrayList<Integer>> calSourceDegrees = calSourceOrdered.get(pair.get(0));
                     ArrayList<ArrayList<Integer>> calTargetDegrees = calTargetOrdered.get(pair.get(1));
+
                     for (ArrayList<Integer> calTargetDegree : calTargetDegrees) {
                         for (ArrayList<Integer> calSourceDegree : calSourceDegrees) {
-
-                            ArrayList<ArrayList<Integer>> edgeCorrelation = new ArrayList<>();
-                            edgeCorrelation.add(calTargetDegree);
-                            edgeCorrelation.add(calSourceDegree);
-
                             if (scaleSourceNodes.containsKey(calSourceDegree) && scaleTargetNodes.containsKey(calTargetDegree)) {
-                                value = Math.min(value, scaleSourceNodes.get(calSourceDegree));
-                                value = Math.min(value, scaleTargetNodes.get(calTargetDegree));
-                                if (!correlatedScale.containsKey(edgeCorrelation)) {
-                                    correlatedScale.put(edgeCorrelation, 0);
-                                }
-                                value = (int) Math.min(value, 1.0 * this.scaleJointDegreeDis.get(calSourceDegree) * this.scaleJointDegreeDis.get(calTargetDegree) - correlatedScale.get(edgeCorrelation));
-                                if (calSourceDegree.equals(calTargetDegree)) {
-                                    value = (int) Math.min(value, 1.0 * this.scaleJointDegreeDis.get(calSourceDegree) * (this.scaleJointDegreeDis.get(calTargetDegree) - 1) - correlatedScale.get(edgeCorrelation));
+
+                                ArrayList<ArrayList<Integer>> edgeCorrelation = new ArrayList<>();
+                                edgeCorrelation.add(calTargetDegree);
+                                edgeCorrelation.add(calSourceDegree);
+
+                                scaledFrequency = calFrequencyForGivenSourceTarget(scaleSourceNodes, scaleTargetNodes, calSourceDegree, calTargetDegree, scaledFrequency, correlatedScale, edgeCorrelation);
+
+                                if (scaledFrequency <= 0) {
+                                    scaledFrequency = budget;
+                                    continue;
                                 }
 
-                                if (value <= 0) {
-                                    value = 0;
-                                }
+                                updateSourceTargetCorrelationFunction(scaleSourceNodes, scaleTargetNodes, calSourceDegree, calTargetDegree, scaledFrequency, correlatedScale, edgeCorrelation);
 
-                                scaleSourceNodes.put(calSourceDegree, scaleSourceNodes.get(calSourceDegree) - value);
-                                scaleTargetNodes.put(calTargetDegree, scaleTargetNodes.get(calTargetDegree) - value);
-                                correlatedScale.put(edgeCorrelation, value + correlatedScale.get(edgeCorrelation));
-                                
-                                CleaningMap.cleanHashMap(scaleSourceNodes, calSourceDegree);
-                                CleaningMap.cleanHashMap(scaleTargetNodes, calTargetDegree);
-                                
-                                budget = budget - value;
+                                budget = budget - scaledFrequency;
                                 if (budget == 0) {
                                     return;
                                 }
-                                value = budget;
+                                scaledFrequency = budget;
                             }
                         }
                     }
@@ -400,57 +459,87 @@ public class CorrelationFunctionScaling {
             }
         }
     }
-
-    private ArrayList<ArrayList<Integer>> paring(ArrayList<Integer> targetDegree ,ArrayList<Integer> sourceDegree) {
+    
+    /**
+     * 
+     * @param targetDegree
+     * @param sourceDegree
+     * @return pairedEdge
+     */
+    private ArrayList<ArrayList<Integer>> paring(ArrayList<Integer> targetDegree, ArrayList<Integer> sourceDegree) {
         ArrayList<ArrayList<Integer>> pair1 = new ArrayList<>();
         pair1.add(targetDegree);
         pair1.add(sourceDegree);
         return pair1;
     }
-
-    private int getCount(ArrayList<ArrayList<Integer>> pair1, HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedScale) {
+    
+    /**
+     * 
+     * @param pair
+     * @param scaledCorrelationFunction
+     * @return countsOfThePair
+     */
+    private int getCount(ArrayList<ArrayList<Integer>> pair, HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction) {
         int count = 0;
-        if (correlatedScale.containsKey(pair1)) {
-            count = correlatedScale.get(pair1);
+        if (scaledCorrelationFunction.containsKey(pair)) {
+            count = scaledCorrelationFunction.get(pair);
         }
         return count;
 
     }
 
-    private int getMinimum(int cap1, int cap2, int capMin, HashMap<ArrayList<Integer>, Integer> calUser, ArrayList<Integer> user, HashMap<ArrayList<Integer>, Integer> calTweet, ArrayList<Integer> tweet) {
-        capMin = Math.min(cap1, capMin);
-        capMin = Math.min(cap2, capMin);
-        capMin = Math.min(capMin, calUser.get(user));
-        capMin = Math.min(capMin, calTweet.get(tweet));
-        return capMin;
+    private int getMinimum(int necessaryConditionAllowedNumber1, int necessaryConditionAllowedNumber2, int adjustableNumber,
+            HashMap<ArrayList<Integer>, Integer> scaleTargetNodes, ArrayList<Integer> targetDegree,
+            HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, ArrayList<Integer> sourceDegree) {
+        adjustableNumber = Math.min(necessaryConditionAllowedNumber1, adjustableNumber);
+        adjustableNumber = Math.min(necessaryConditionAllowedNumber2, adjustableNumber);
+        adjustableNumber = Math.min(adjustableNumber, scaleTargetNodes.get(targetDegree));
+        adjustableNumber = Math.min(adjustableNumber, scaleSourceNodes.get(sourceDegree));
+        return adjustableNumber;
     }
 
-    private void doubleChecking(HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedScale ) {
-        for (Map.Entry<ArrayList<ArrayList<Integer>>, Integer> entry : correlatedScale.entrySet()) {
-            int value = 0;
+    /**
+     * This method checks if the scaled correlation function satisfies the
+     * necessary condition.
+     *
+     * @param scaledCorrelationFcuntion
+     */
+    private void doubleChecking(HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFcuntion) {
+        for (Map.Entry<ArrayList<ArrayList<Integer>>, Integer> entry : scaledCorrelationFcuntion.entrySet()) {
+            int frequency = 0;
             if (entry.getKey().get(0).equals(entry.getKey().get(1))) {
-                value = (int) (1.0 * this.scaleJointDegreeDis.get(entry.getKey().get(0)) * (this.scaleJointDegreeDis.get(entry.getKey().get(0)) - 1) - entry.getValue());
+                frequency = (int) (1.0 * this.scaleJointDegreeDis.get(entry.getKey().get(0)) * (this.scaleJointDegreeDis.get(entry.getKey().get(0)) - 1) - entry.getValue());
             } else {
-                value = (int) (1.0 * this.scaleJointDegreeDis.get(entry.getKey().get(0)) * (this.scaleJointDegreeDis.get(entry.getKey().get(1)) - 0) - entry.getValue());
+                frequency = (int) (1.0 * this.scaleJointDegreeDis.get(entry.getKey().get(0)) * (this.scaleJointDegreeDis.get(entry.getKey().get(1)) - 0) - entry.getValue());
             }
 
-            if (value < 0) {
-                System.err.println("negative value in correlation function");
+            if (frequency < 0) {
+                System.err.println("Error: Negative value in correlation function");
             }
 
-            if (entry.getValue() > 0) {
-                correlatedScale.put(entry.getKey(), entry.getValue());
-            }
         }
     }
 
-    private void sort_correlation(HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedOriginal) {
+    /**
+     * The correlation function is sorted based on frequencies
+     *
+     * @param correlatedOriginal
+     * @return sortedCorrelationFunction
+     */
+    private List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sortCorrelation(HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedOriginal) {
         Sort so = new Sort();
-        sortedCorrelation = so.sortOnAppearance(correlatedOriginal, originalJointDegreeDis);
+        List<Map.Entry<ArrayList<ArrayList<Integer>>, Integer>> sortedOriginalCorrelationFunction
+                = so.sortOnAppearance(correlatedOriginal, originalJointDegreeDis);
+        return sortedOriginalCorrelationFunction;
     }
 
-    private int cal_value(Entry<ArrayList<ArrayList<Integer>>, Integer> entry) {
-        double floatValue = entry.getValue() * s_n * (1 + Math.max(0, s_e));
+    /**
+     *
+     * @param originalFrequency
+     * @return scaledFrequency
+     */
+    private int scaleFrequency(int originalFrequency) {
+        double floatValue = originalFrequency * s_n * (1 + Math.max(0, s_e));
         int value = (int) (floatValue);
         double difff = floatValue - value;
 
@@ -460,13 +549,160 @@ public class CorrelationFunctionScaling {
         }
         return value;
     }
-
+    
+    
+    /**
+     * 
+     * @param scaleSourceNodes
+     * @return listOfSourceNodes
+     */
     private ArrayList<ArrayList<Integer>> extractSourceList(HashMap<ArrayList<Integer>, Integer> scaleSourceNodes) {
-        ArrayList<ArrayList<Integer>> sourceSet = new ArrayList<>();
-        for (ArrayList<Integer> tweet : scaleSourceNodes.keySet()) {
-            sourceSet.add(tweet);
+        ArrayList<ArrayList<Integer>> sourceNodeList = new ArrayList<>();
+        for (ArrayList<Integer> sourceNode : scaleSourceNodes.keySet()) {
+            sourceNodeList.add(sourceNode);
         }
-        return sourceSet;
+        return sourceNodeList;
+    }
+    
+    /**
+     * 
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     * @param calSourceDegree
+     * @param calTargetDegree
+     * @param scaledFrequency
+     * @param correlatedScale
+     * @param edgeCorrelation
+     * @return incremantalFrequency
+     */
+    private int calFrequencyForGivenSourceTarget(HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes, ArrayList<Integer> calSourceDegree, ArrayList<Integer> calTargetDegree, int scaledFrequency, HashMap<ArrayList<ArrayList<Integer>>, Integer> correlatedScale, ArrayList<ArrayList<Integer>> edgeCorrelation) {
+        scaledFrequency = Math.min(scaledFrequency, scaleSourceNodes.get(calSourceDegree));
+        scaledFrequency = Math.min(scaledFrequency, scaleTargetNodes.get(calTargetDegree));
+
+        if (!correlatedScale.containsKey(edgeCorrelation)) {
+            correlatedScale.put(edgeCorrelation, 0);
+        }
+
+        scaledFrequency = (int) Math.min(scaledFrequency, 1.0 * this.scaleJointDegreeDis.get(calSourceDegree) * this.scaleJointDegreeDis.get(calTargetDegree) - correlatedScale.get(edgeCorrelation));
+        if (calSourceDegree.equals(calTargetDegree)) {
+            scaledFrequency = (int) Math.min(scaledFrequency, 1.0 * this.scaleJointDegreeDis.get(calSourceDegree) * (this.scaleJointDegreeDis.get(calTargetDegree) - 1) - correlatedScale.get(edgeCorrelation));
+        }
+        return scaledFrequency;
+    }
+
+    /**
+     * Update the statistics for the random synthesis
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     * @param calSourceDegree
+     * @param calTargetDegree
+     * @param scaledFrequency
+     * @param scaledCorrelationFunction
+     * @param edgeCorrelation 
+     */
+    private void updateSourceTargetCorrelationFunction(HashMap<ArrayList<Integer>, Integer> scaleSourceNodes,
+            HashMap<ArrayList<Integer>, Integer> scaleTargetNodes, ArrayList<Integer> calSourceDegree, ArrayList<Integer> calTargetDegree, int scaledFrequency, HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction, ArrayList<ArrayList<Integer>> edgeCorrelation) {
+        scaleSourceNodes.put(calSourceDegree, scaleSourceNodes.get(calSourceDegree) - scaledFrequency);
+        scaleTargetNodes.put(calTargetDegree, scaleTargetNodes.get(calTargetDegree) - scaledFrequency);
+        int oldFrequency = 0;
+        if (scaledCorrelationFunction.containsKey(edgeCorrelation)) {
+            oldFrequency = scaledCorrelationFunction.get(edgeCorrelation);
+        }
+        scaledCorrelationFunction.put(edgeCorrelation, scaledFrequency + oldFrequency);
+
+        CleaningMap.cleanHashMap(scaleSourceNodes, calSourceDegree);
+        CleaningMap.cleanHashMap(scaleTargetNodes, calTargetDegree);
+    }
+
+    /**
+     *
+     * @param calSourceDegree
+     * @param scaleSourceNodes
+     * @param calTargetDegree
+     * @param scaleTargetNodes
+     * @param oldFrequency
+     * @return incrementedFrequency
+     */
+    private int calculateIncrementedFrequency(HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction,
+            ArrayList<ArrayList<Integer>> edgeCorrelation,
+            ArrayList<Integer> calSourceDegree, HashMap<ArrayList<Integer>, Integer> scaleSourceNodes,
+            ArrayList<Integer> calTargetDegree, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes) {
+        int oldFrequency = 0;
+        if (scaledCorrelationFunction.containsKey(edgeCorrelation)) {
+            oldFrequency = scaledCorrelationFunction.get(edgeCorrelation);
+        }
+        int incrementedFrequency = scaleSourceNodes.get(calSourceDegree);
+        incrementedFrequency = Math.min(incrementedFrequency, scaleTargetNodes.get(calTargetDegree));
+
+        incrementedFrequency = (int) Math.min(incrementedFrequency, 1.0 * this.scaleJointDegreeDis.get(calSourceDegree) * this.scaleJointDegreeDis.get(calTargetDegree) - oldFrequency);
+        if (calSourceDegree.equals(calTargetDegree)) {
+            incrementedFrequency = (int) Math.min(incrementedFrequency, 1.0 * this.scaleJointDegreeDis.get(calSourceDegree) * (this.scaleJointDegreeDis.get(calTargetDegree) - 1) - oldFrequency);
+        }
+        return incrementedFrequency;
+    }
+    
+    
+    /**
+     * 
+     * @param scaledCorrelationFunction
+     * @return sortedScaledCorrelationEntries
+     */
+    private List<Entry<ArrayList<ArrayList<Integer>>, Integer>> calculateSortedEntries(HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction) {
+        HashMap<ArrayList<ArrayList<Integer>>, Integer> tempResult = new HashMap<>();
+        for (Map.Entry<ArrayList<ArrayList<Integer>>, Integer> entry : scaledCorrelationFunction.entrySet()) {
+            tempResult.put(entry.getKey(), entry.getValue());
+        }
+        return new Sort().sortOnKeySum(tempResult);
+    }
+
+    /**
+     *
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     * @param newPair1
+     * @param newPair2
+     * @param scaledCorrelationFunction
+     * @param targetDegree
+     * @param sourceDegree
+     * @param originalSource
+     * @param originalTarget
+     * @param adjustableNumber
+     * @return adjustableNumber
+     */
+    private int calAdjustableNumber(HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes, ArrayList<ArrayList<Integer>> newPair1, ArrayList<ArrayList<Integer>> newPair2, HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction, ArrayList<Integer> targetDegree, ArrayList<Integer> sourceDegree, ArrayList<Integer> originalSource, ArrayList<Integer> originalTarget, int adjustableNumber) {
+
+        int count1 = getCount(newPair1, scaledCorrelationFunction);
+        int count2 = getCount(newPair2, scaledCorrelationFunction);
+
+        int necessaryConditionAllowedNumber1 = this.scaleJointDegreeDis.get(targetDegree) * this.scaleJointDegreeDis.get(originalSource) - count1;
+        int necessaryConditionAllowedNumber2 = this.scaleJointDegreeDis.get(originalTarget) * this.scaleJointDegreeDis.get(sourceDegree) - count2;
+
+        adjustableNumber = getMinimum(necessaryConditionAllowedNumber1, necessaryConditionAllowedNumber2, adjustableNumber,
+                scaleTargetNodes, targetDegree, scaleSourceNodes, sourceDegree);
+        return adjustableNumber;
+    }
+
+    /**
+     * This method updates the corresponding statistics
+     *
+     * @param existingEdgeCorrelation
+     * @param scaledCorrelationFunction
+     * @param reduce
+     * @param newPair1
+     * @param newPair2
+     * @param sourceDegree
+     * @param targetDegree
+     * @param scaleSourceNodes
+     * @param scaleTargetNodes
+     */
+    private void updateTwoNewPairs(ArrayList<ArrayList<Integer>> existingEdgeCorrelation, HashMap<ArrayList<ArrayList<Integer>>, Integer> scaledCorrelationFunction, int reduce, ArrayList<ArrayList<Integer>> newPair1, ArrayList<ArrayList<Integer>> newPair2, ArrayList<Integer> sourceDegree, ArrayList<Integer> targetDegree, HashMap<ArrayList<Integer>, Integer> scaleSourceNodes, HashMap<ArrayList<Integer>, Integer> scaleTargetNodes) {
+        int count1 = getCount(newPair1, scaledCorrelationFunction);
+        int count2 = getCount(newPair2, scaledCorrelationFunction);
+        scaledCorrelationFunction.put(existingEdgeCorrelation, scaledCorrelationFunction.get(existingEdgeCorrelation) - reduce);
+        scaledCorrelationFunction.put(newPair2, count2 + reduce);
+        scaledCorrelationFunction.put(newPair1, count1 + reduce);
+        scaleSourceNodes.put(sourceDegree, scaleSourceNodes.get(sourceDegree) - reduce);
+        scaleTargetNodes.put(targetDegree, scaleTargetNodes.get(targetDegree) - reduce);
     }
 
 }

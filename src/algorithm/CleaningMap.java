@@ -12,6 +12,9 @@ import java.util.HashMap;
 public class CleaningMap {
 
     public static boolean cleanHashMap(HashMap<ArrayList<Integer>, Integer> map, ArrayList<Integer> key) {
+        if (!map.containsKey(key)){
+            return true;
+        }
         if (map.get(key) <= 0) {
             map.remove(key);
             return true;
@@ -20,7 +23,11 @@ public class CleaningMap {
     }
     
      public static boolean cleanHashMap(HashMap<Integer, Integer> map, Integer key) {
-        if (map.get(key) <= 0) {
+         if (!map.containsKey(key)){
+            return true;
+        }
+           
+         if (map.get(key) <= 0) {
             map.remove(key);
             return true;
         }
@@ -33,13 +40,17 @@ public class CleaningMap {
             keys.add(temp);
         }
         for (ArrayList<Integer> temp : keys) {
-            if (map.get(temp) <= 0) {
+            if (map.containsKey(temp) && map.get(temp) <= 0) {
                 map.remove(temp);
             }
         }
     }
     
-    public static void removeZeroDegreeMap(HashMap<Integer, Integer> scaleIndegreeMap) {
+    /**
+     * This method removes the degree with 0 frequency from the map
+     * @param scaleIndegreeMap 
+     */
+    public static void removeZeroFrequencyFromMap(HashMap<Integer, Integer> scaleIndegreeMap) {
         ArrayList<Integer> zeroDegrees = new ArrayList<>();
         for (Integer key : scaleIndegreeMap.keySet()) {
             if (scaleIndegreeMap.get(key) == 0) {

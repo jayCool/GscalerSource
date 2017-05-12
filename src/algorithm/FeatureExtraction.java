@@ -24,23 +24,38 @@ import java.util.logging.Logger;
 public class FeatureExtraction {
     int minMaxDegree = 0;
    
+    
+    /**
+     * This is the method for extracting informations, indegree, outdegree, joindegree(bidegree) distributions, and correlation distribution
+     * @param originfile (The file for the graph)
+     * @return DistributionFeature 
+     */
     public DistributionFeature extractInformation(String originfile) {
         DistributionFeature disFeature = new DistributionFeature();
         
         HashMap<String, Integer> idIndegreeCounts = new HashMap<>();
         HashMap<String, Integer> idOutdegreeCounts = new HashMap<>();
         
-        count_in_out_degree(originfile, idIndegreeCounts, idOutdegreeCounts);
+        countInOutDegreeForAllNodes(originfile, idIndegreeCounts, idOutdegreeCounts);
         
-        HashMap<String, ArrayList<Integer>> idDegree = new HashMap<>();
+        HashMap<String, ArrayList<Integer>> idJointDegree = new HashMap<>();
+        
+        processInOutBiFrequency(idJointDegree, idIndegreeCounts, idOutdegreeCounts, disFeature);
 
-        process_in_out_bi_frequency_counts(idDegree, idIndegreeCounts, idOutdegreeCounts, disFeature);
-
-        construct_correlation_function(originfile, idDegree, disFeature);
+        constructCorrelationFunction(originfile, idJointDegree, disFeature);
         return disFeature;
     }
-
-    private void count_in_out_degree(String originfile, HashMap<String, Integer> idIndegreeCounts,
+    
+    
+    /**
+     * 
+     * @param originfile (The file for the graph)
+     * @param idIndegreeCounts 
+     * @param idOutdegreeCounts 
+     * 
+     * 
+     */
+    private void countInOutDegreeForAllNodes(String originfile, HashMap<String, Integer> idIndegreeCounts,
             HashMap<String, Integer> idOutdegreeCounts) {
         InputStream input = null;
         try {
@@ -89,7 +104,14 @@ public class FeatureExtraction {
         }
     }
 
-    private void process_in_out_bi_frequency_counts(HashMap<String, ArrayList<Integer>> idDegree,
+    /**
+     * 
+     * @param idJointDegree  
+     * @param idIndegreeCounts
+     * @param idOutdegreeCounts
+     * @param disFeature  (results are updated in disFeature)
+     */
+    private void processInOutBiFrequency(HashMap<String, ArrayList<Integer>> idJointDegree,
             HashMap<String, Integer> idIndegreeCounts, HashMap<String, Integer> idOutdegreeCounts, DistributionFeature disFeature) {
         for (Map.Entry<String, Integer> entry : idIndegreeCounts.entrySet()) {
             if (disFeature.indegreeDis.containsKey(entry.getValue())) {
@@ -101,7 +123,7 @@ public class FeatureExtraction {
             ArrayList<Integer> arr = new ArrayList<>();
             arr.add(entry.getValue());
             arr.add(idOutdegreeCounts.get(entry.getKey()));
-            idDegree.put(entry.getKey(), arr);
+            idJointDegree.put(entry.getKey(), arr);
 
             if (disFeature.jointdegreeDis.containsKey(arr)) {
                 disFeature.jointdegreeDis.put(arr, disFeature.jointdegreeDis.get(arr) + 1);
@@ -119,20 +141,25 @@ public class FeatureExtraction {
         }
     }
 
-    private void construct_correlation_function(String originfile, HashMap<String, ArrayList<Integer>> idDegree, DistributionFeature disFeature) {
+    
+    /**
+     * 
+     * @param originfile
+     * @param idJointDegree
+     * @param disFeature  (Results are updated in disFeature)
+     */
+    private void constructCorrelationFunction(String originfile, HashMap<String, ArrayList<Integer>> idJointDegree, DistributionFeature disFeature) {
         try (BufferedReader bb = new BufferedReader(new InputStreamReader(new FileInputStream(originfile)))) {
             int edgesize = 0;
-//            InputStream input = null;
-//
-//            input = ;
+
             String line = bb.readLine();
             while (line != null) {
                 String temp[] = line.split("[^a-zA-Z0-9']+");
                 String u = temp[1];
                 String f = temp[0];
                 if (!u.equals(f)) {
-                    ArrayList<Integer> arr1 = idDegree.get(u);
-                    ArrayList<Integer> arr2 = idDegree.get(f);
+                    ArrayList<Integer> arr1 = idJointDegree.get(u);
+                    ArrayList<Integer> arr2 = idJointDegree.get(f);
                     ArrayList<ArrayList<Integer>> arrs = new ArrayList<>(2);
                     arrs.add(arr1);
                     arrs.add(arr2);
@@ -147,7 +174,7 @@ public class FeatureExtraction {
 
             }
             bb.close();
-            disFeature.nodeSize = idDegree.size();
+            disFeature.nodeSize = idJointDegree.size();
             disFeature.edgeSize = edgesize;
         } catch (FileNotFoundException ex) {
             Logger.getLogger(CommandParser.class.getName()).log(Level.SEVERE, null, ex);
