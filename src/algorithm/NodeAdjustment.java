@@ -33,13 +33,24 @@ public class NodeAdjustment {
      * @param frequencies
      */
     private void smoothAndExtendDegrees(ArrayList<Integer> degreeList, ArrayList<Integer> frequencies) {
-        for (int i = 0; i < degreeList.get(degreeList.size() - 1); i++) {
-            if (!degreeList.contains(i)) {
-                degreeList.add(i, i);
-                frequencies.add(i, 0);
+        int minDegree = degreeList.get(0);
+        int maxDegree = degreeList.get(degreeList.size() - 1);
+        HashMap<Integer, Integer> degreeFreq = new HashMap<>();
+        for (int index = 0; index < degreeList.size(); index++) {
+            degreeFreq.put(degreeList.get(index), frequencies.get(index));
+        }
+        degreeList.clear();
+        frequencies.clear();
+        for (int i = minDegree; i < maxDegree; i++) {
+            degreeList.add(i);
+            if (!degreeFreq.containsKey(i)) {
+                frequencies.add(0);
+            } else {
+                frequencies.add(degreeFreq.get(i));
             }
         }
-        for (int i = 0; i < Math.min(Constant.CLEANING_THRESHOLD, degreeList.size() / Constant.CLEANING_THRESHOLD); i++) {
+
+        for (int i = 0; i < Math.min(Constant.CLEANING_THRESHOLD, maxDegree / Constant.CLEANING_THRESHOLD); i++) {
             degreeList.add(degreeList.size());
             frequencies.add(0);
         }
@@ -106,12 +117,11 @@ public class NodeAdjustment {
         return frequencies;
     }
 
-    
     /**
      * Distribute the diffs proportionally to the frequencies
-     * 
+     *
      * @param scaledNodeSize
-     * @param frequencies 
+     * @param frequencies
      */
     private void evenDistributionOfDiffs(int scaledNodeSize, ArrayList<Integer> frequencies) {
         int vertexSum = sumVector(frequencies);
@@ -125,8 +135,9 @@ public class NodeAdjustment {
 
     /**
      * Randomly pick up the degrees, and modifies the frequencies by 1.
+     *
      * @param frequencies
-     * @param scaledNodeSize 
+     * @param scaledNodeSize
      */
     private void randomAdjustmentForDiffs(ArrayList<Integer> frequencies, int scaledNodeSize) {
         int vertexSum = sumVector(frequencies);
