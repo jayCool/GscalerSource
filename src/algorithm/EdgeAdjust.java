@@ -11,16 +11,17 @@ import java.util.Collections;
 import java.util.HashMap;
 
 class EdgeAdjust extends Sort {
+
     long starttime = 0;
-   
+
     EdgeAdjust(long currentTimeMillis) {
         this.starttime = currentTimeMillis;
     }
 
     /**
-     * This method returns the adjustable diffs and the corresponding pairs.
-     * For example, [1,2,3,4] then the pairs are {-3:, -2:, -1:, 1:, 2:, 3:}
-     * 
+     * This method returns the adjustable diffs and the corresponding pairs. For
+     * example, [1,2,3,4] then the pairs are {-3:, -2:, -1:, 1:, 2:, 3:}
+     *
      * @param degreeList
      * @param frequencies
      * @return AdjustableDiffMap
@@ -29,33 +30,39 @@ class EdgeAdjust extends Sort {
         HashMap<Integer, ArrayList<Integer>> result = new HashMap<>();
         for (int i = 0; i < degreeList.size(); i++) {
             if (frequencies.get(i) > 0) {
+                /*
                 for (int j = i + 1; j < degreeList.size(); j++) {
                     ArrayList<Integer> arr = new ArrayList<>();
                     arr.add(i);
                     arr.add(j);
                     result.put(degreeList.get(j) - degreeList.get(i), arr);
                 }
-
+                 */
                 for (int j = 0; j < degreeList.size(); j++) {
+                    int diff = degreeList.get(j) - degreeList.get(i);
+                    if (result.containsKey(diff)) {
+                        continue;
+                    }
                     ArrayList<Integer> arr = new ArrayList<>();
                     arr.add(i);
                     arr.add(j);
-                    result.put(degreeList.get(j) - degreeList.get(i), arr);
+                    result.put(diff, arr);
 
                 }
             }
         }
         return result;
     }
-    
-    
+
     /**
-     * This method modifies the scaledDegree to satisfy the scaledEdgeSize and scaledNodeSize.
+     * This method modifies the scaledDegree to satisfy the scaledEdgeSize and
+     * scaledNodeSize.
+     *
      * @param scaleDegree
      * @param scaledEdgeSize
      * @param scaledNodeSize
      * @return scaledDegreeDistribution After Edge Adjustment
-     * @throws FileNotFoundException 
+     * @throws FileNotFoundException
      */
     HashMap<Integer, Integer> smoothDegree(HashMap<Integer, Integer> scaleDegree, int scaledEdgeSize, int scaledNodeSize) throws FileNotFoundException {
         ArrayList<Integer> degreeList = new ArrayList<>();
@@ -63,7 +70,6 @@ class EdgeAdjust extends Sort {
 
         closingDegreeGap(scaleDegree, degreeList, frequencies);
 
-        
         HashMap<Integer, ArrayList<Integer>> adjustableDiffMap = calAdjustableDiffAndDegreePairs(degreeList, frequencies);
         boolean maxflag = false;
 
@@ -73,7 +79,7 @@ class EdgeAdjust extends Sort {
 
         while (!adjustableDiffMap.containsKey(edgeDiff) && edgeDiff != 0) {
             RunningException.checkTooLongRunTime(starttime);
-            
+
             if (edgeDiff < 0) {
                 if (frequencies.get(ender) > 0) {
                     frequencies.set(starter, frequencies.get(starter) + 1);
@@ -125,9 +131,9 @@ class EdgeAdjust extends Sort {
         return res;
     }
 
-    
     /**
      * Calculate the vector product
+     *
      * @param x
      * @param value
      * @return The product of two input vector
@@ -141,12 +147,13 @@ class EdgeAdjust extends Sort {
         }
         return sum;
     }
-    
+
     /**
      * This method makes sure that the degreeList does not have gap in-between.
+     *
      * @param scaleDegree
      * @param degreeList
-     * @param frequencies 
+     * @param frequencies
      */
     private void closingDegreeGap(HashMap<Integer, Integer> scaleDegree, ArrayList<Integer> degreeList, ArrayList<Integer> frequencies) {
         int maxDegree = Collections.max(scaleDegree.keySet());
