@@ -150,7 +150,8 @@ class EdgeAdjust extends Sort {
      */
     private void closingDegreeGap(HashMap<Integer, Integer> scaleDegree, ArrayList<Integer> degreeList, ArrayList<Integer> frequencies) {
         int maxDegree = Collections.max(scaleDegree.keySet());
-        for (int i = 0; i < maxDegree; i++) {
+        int minDegree = Collections.min(scaleDegree.keySet());
+        for (int i = minDegree; i < maxDegree; i++) {
             if (!scaleDegree.containsKey(i)) {
                 scaleDegree.put(i, 0);
             }
