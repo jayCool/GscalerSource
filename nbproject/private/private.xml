@@ -2,22 +2,6 @@
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/EdgeAdjust.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/NodeSynthesis.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/CleaningMap.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/EdgeLink.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/DegreeScaling.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/Constant.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/CorrelationFunctionScaling.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/RunningException.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/FeatureExtraction.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/Gscaler.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/AdjacencyMat.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/CommandParser.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/Sort.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/DistributionFeature.java</file>
-            <file>file:/C:/Users/workshop/Documents/GitHub/GscalerSource/src/algorithm/NodeAdjustment.java</file>
-        </group>
+        <group/>
     </open-files>
 </project-private>

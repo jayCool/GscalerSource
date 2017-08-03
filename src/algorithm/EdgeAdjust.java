@@ -30,14 +30,6 @@ class EdgeAdjust extends Sort {
         HashMap<Integer, ArrayList<Integer>> result = new HashMap<>();
         for (int i = 0; i < degreeList.size(); i++) {
             if (frequencies.get(i) > 0) {
-                /*
-                for (int j = i + 1; j < degreeList.size(); j++) {
-                    ArrayList<Integer> arr = new ArrayList<>();
-                    arr.add(i);
-                    arr.add(j);
-                    result.put(degreeList.get(j) - degreeList.get(i), arr);
-                }
-                 */
                 for (int j = 0; j < degreeList.size(); j++) {
                     int diff = degreeList.get(j) - degreeList.get(i);
                     if (result.containsKey(diff)) {
@@ -158,7 +150,7 @@ class EdgeAdjust extends Sort {
     private void closingDegreeGap(HashMap<Integer, Integer> scaleDegree, ArrayList<Integer> degreeList, ArrayList<Integer> frequencies) {
         int maxDegree = Collections.max(scaleDegree.keySet());
         int minDegree = Collections.min(scaleDegree.keySet());
-        for (int i = minDegree; i < maxDegree; i++) {
+        for (int i = minDegree; i <= maxDegree; i++) {
             if (!scaleDegree.containsKey(i)) {
                 scaleDegree.put(i, 0);
             }
