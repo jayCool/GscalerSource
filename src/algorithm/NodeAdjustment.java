@@ -51,7 +51,7 @@ public class NodeAdjustment {
         }
 
         for (int i = 0; i < Math.min(Constant.CLEANING_THRESHOLD, maxDegree / Constant.CLEANING_THRESHOLD); i++) {
-            degreeList.add(degreeList.size());
+            degreeList.add(maxDegree+i+1);
             frequencies.add(0);
         }
     }
